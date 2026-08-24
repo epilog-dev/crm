@@ -40,7 +40,7 @@ async function register() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50">
+  <div class="min-h-screen flex items-center justify-center">
     <UCard class="w-full max-w-md">
       <template #header>
         <div class="text-center">

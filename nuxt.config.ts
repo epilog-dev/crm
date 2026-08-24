@@ -4,10 +4,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/supabase'],
   css: ['~/assets/css/main.css'],
-  colorMode: {
-    preference: 'light',
-    fallback: 'light'
-  },
+  // colorMode: {
+  //   preference: 'light',
+  //   fallback: 'light'
+  // },
   // Add the Supabase configuration below
   supabase: {
     redirectOptions: {
