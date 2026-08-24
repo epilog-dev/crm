@@ -3,10 +3,12 @@
 
 :root {
   --ui-bg: var(--color-slate-50);
+  --ui-border: var(--color-zinc-200);
 }
 
 .dark {
   --ui-bg: var(--color-zinc-950);
+  --ui-border: var(--color-zinc-900);
 }
 div[id^="dashboard-sidebar-"]:not([data-dragging="true"]) {
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);

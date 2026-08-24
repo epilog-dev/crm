@@ -1,6 +1,15 @@
 <script lang="ts" setup>
 import type { NavigationMenuItem } from "@nuxt/ui";
 
+useSeoMeta({
+  title: "Dashboard - Nudge CRM",
+  description: "Manage your inventory and buyer pipeline.",
+  ogTitle: "Dashboard - Nudge CRM",
+  ogDescription: "Manage your inventory and buyer pipeline.",
+  ogImage: "https://example.com/og-image.png",
+  twitterCard: "summary_large_image",
+});
+
 const items = ref<NavigationMenuItem[]>([
   {
     label: "Dashboard",
@@ -52,9 +61,25 @@ const items = ref<NavigationMenuItem[]>([
 </script>
 <template>
   <UDashboardGroup>
-    <UDashboardSidebar collapsible>
+    <UDashboardSidebar
+      collapsible
+      :default-size="12"
+      :menu="{ ui: { content: 'max-w-xs' } }"
+    >
       <template #header="{ collapsed }">
-        <h1 class="font-semibold" v-if="!collapsed">nudge</h1>
+        <div class="flex items-center gap-2.5 font-semibold text-lg">
+          <div
+            class="flex size-7 items-center justify-center rounded-lg bg-primary text-inverted font-bold text-sm shrink-0"
+          >
+            N
+          </div>
+          <!-- Brand Name (hidden when collapsed) -->
+          <span
+            v-if="!collapsed"
+            class="tracking-tight text-highlighted text-sm"
+            >Nudge</span
+          >
+        </div>
       </template>
       <template #default="{ collapsed }">
         <UNavigationMenu
@@ -73,6 +98,7 @@ const items = ref<NavigationMenuItem[]>([
           <UDashboardSidebarCollapse class="cursor-pointer" />
         </template>
         <template #right class="cursor-pointer">
+          <NotificationButton />
           <UColorModeButton class="cursor-pointer" />
         </template>
       </UDashboardNavbar>
