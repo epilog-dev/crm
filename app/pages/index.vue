@@ -1,35 +1,32 @@
 <script setup lang="ts">
 definePageMeta({
-  title: "Dashboard",
-});
+  title: 'Dashboard'
+})
 </script>
 
 <template>
-  <DashboardPanel>
-    <template #header>
-      <UDashboardNavbar title="Home" :ui="{ right: 'gap-3' }">
-        <template #leading>
-          <UDashboardSidebarCollapse />
+  <div class="p-6 space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <UCard>
+        <template #header>
+          <div class="font-medium text-muted text-sm">Active Orders</div>
         </template>
+        <div class="text-3xl font-bold tracking-tight">12</div>
+      </UCard>
 
-        <template #right>
-          <UTooltip text="Notifications" :shortcuts="['N']">
-            <UButton color="neutral" variant="ghost" square>
-              <UChip color="error" inset>
-                <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
-              </UChip>
-            </UButton>
-          </UTooltip>
+      <UCard>
+        <template #header>
+          <div class="font-medium text-muted text-sm">Products Listed</div>
         </template>
-      </UDashboardNavbar>
+        <div class="text-3xl font-bold tracking-tight">48</div>
+      </UCard>
 
-      <UDashboardToolbar>
-        <template #left>
-          <!-- NOTE: The `-ms-1` class is used to align with the `DashboardSidebarCollapse` button here. -->
+      <UCard>
+        <template #header>
+          <div class="font-medium text-muted text-sm">Total Customers</div>
         </template>
-      </UDashboardToolbar>
-    </template>
-
-    <template #body> </template>
-  </DashboardPanel>
+        <div class="text-3xl font-bold tracking-tight">156</div>
+      </UCard>
+    </div>
+  </div>
 </template>

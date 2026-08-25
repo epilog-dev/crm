@@ -188,7 +188,7 @@ const items = ref<NavigationMenuItem[]>([
   {
     label: "Dashboard",
     icon: "i-lucide-layout-dashboard",
-    to: "/dashboard",
+    to: "/",
   },
   {
     label: "Orders",
@@ -199,34 +199,34 @@ const items = ref<NavigationMenuItem[]>([
         icon: "i-lucide-columns-3",
         description:
           "Live pipeline for 15-min holds, paid items, and courier slips.",
-        to: "/dashboard/orders",
+        to: "/orders",
       },
       {
         label: "Packing Slips",
         icon: "i-lucide-printer",
         description:
           "1-tap printable delivery slips with buyer landmark details.",
-        to: "/dashboard/orders/slips",
+        to: "/orders/slips",
       },
     ],
   },
   {
     label: "Products",
     icon: "i-lucide-tag",
-    to: "/dashboard/products",
+    to: "/products",
     description: "Link Instagram posts to inventory items and set prices.",
   },
   {
     label: "Customers",
     icon: "i-lucide-users",
-    to: "/dashboard/customers",
+    to: "/customers",
     description:
       "View buyer handles, saved local landmarks, and purchase histories.",
   },
   {
     label: "Settings",
     icon: "i-lucide-settings",
-    to: "/dashboard/settings",
+    to: "/settings",
     description:
       "Manage Meta Webhook connection and 15-minute hold timer rules.",
   },
