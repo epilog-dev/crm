@@ -5,7 +5,7 @@ useSeoMeta({
   title: 'Products'
 })
 
-const { data: products, status } = await useFetch('/api/products')
+const { data: products, status } = await useLazyFetch('/api/products', {server: false})
 
 const search = ref('')
 
