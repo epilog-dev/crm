@@ -56,8 +56,10 @@ useSeoMeta({
               <UBadge color="error" variant="solid" size="xs"
                 class="absolute top-0 -right-1 rounded-full p-0 h-2 w-2 min-w-0" />
             </div>
-            <template #content>
-              <Placeholder class="h-full m-4" />
+            <template #body>
+              <div class="h-full flex items-center justify-center text-muted">
+                No new notifications
+              </div>
             </template>
           </USlideover>
           <UColorModeButton class="cursor-pointer" />
@@ -68,5 +70,6 @@ useSeoMeta({
       </div>
 
     </UDashboardPanel>
+    <UDashboardSearch />
   </UDashboardGroup>
 </template>
