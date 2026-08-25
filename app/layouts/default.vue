@@ -264,7 +264,20 @@ const items = ref<NavigationMenuItem[]>([
       </template>
     </UDashboardSidebar>
 
-    <slot />
+    <UDashboardPanel>
+      <UDashboardNavbar>
+        <template #left>
+          <UDashboardSidebarCollapse class="cursor-pointer" />
+          <h1 class="font-semibold">{{ $route.meta.title || 'Dashboard' }}</h1>
+        </template>
+        <template #right>
+          <UColorModeButton class="cursor-pointer" />
+        </template>
+      </UDashboardNavbar>
+      <div class="p-6 space-y-6">
+        <slot />
+      </div>
 
+    </UDashboardPanel>
   </UDashboardGroup>
 </template>
