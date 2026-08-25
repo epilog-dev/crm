@@ -2,9 +2,9 @@
 const { user, navItems, userMenuItems } = useNavigation()
 
 useSeoMeta({
-  title: "Dashboard - Nudge CRM",
+  title: "Dashboard - Plum CRM",
   description: "Manage your inventory and buyer pipeline.",
-  ogTitle: "Dashboard - Nudge CRM",
+  ogTitle: "Dashboard - Plum CRM",
   ogDescription: "Manage your inventory and buyer pipeline.",
   ogImage: "https://example.com/og-image.png",
   twitterCard: "summary_large_image",
@@ -18,9 +18,9 @@ useSeoMeta({
         <div class="flex items-center gap-2.5 font-semibold text-lg">
           <div
             class="flex size-7 items-center justify-center rounded-lg bg-primary text-inverted font-bold text-sm shrink-0">
-            N
+            P
           </div>
-          <span v-if="!collapsed" class="tracking-tight text-highlighted text-sm">Nudge</span>
+          <span v-if="!collapsed" class="tracking-tight text-highlighted text-sm">Plum</span>
         </div>
       </template>
 
