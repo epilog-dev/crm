@@ -195,7 +195,7 @@ function totalOrdersCount() {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="p-6 space-y-4">
     <!-- Top Filter & Action Bar -->
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-2">

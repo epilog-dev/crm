@@ -43,7 +43,7 @@ const columns: TableColumn<any>[] = [
 </script>
 
 <template>
-    <div class="space-y-4">
+    <div class="p-6 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
             <UInput v-model="search" class="max-w-sm" icon="i-lucide-search" placeholder="Filter products..." />
 
