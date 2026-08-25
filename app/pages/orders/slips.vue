@@ -6,6 +6,6 @@ definePageMeta({
 
 <template>
   <div>
-    slips
+    SLIPS
   </div>
 </template>

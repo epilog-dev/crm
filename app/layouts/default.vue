@@ -25,6 +25,7 @@ useSeoMeta({
       </template>
 
       <template #default="{ collapsed }">
+        <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
         <UNavigationMenu popover tooltip :items="navItems" class="w-full justify-center" orientation="vertical"
           :collapsed="collapsed" />
       </template>
@@ -48,6 +49,17 @@ useSeoMeta({
           <h1 class="font-semibold">{{ $route.meta.title || 'Dashboard' }}</h1>
         </template>
         <template #right>
+          <USlideover title="Notifications">
+            <div class="relative inline-flex">
+              <UButton color="neutral" variant="ghost" icon="i-lucide-bell" aria-label="Open notifications"
+                class="cursor-pointer" />
+              <UBadge color="error" variant="solid" size="xs"
+                class="absolute top-0 -right-1 rounded-full p-0 h-2 w-2 min-w-0" />
+            </div>
+            <template #content>
+              <Placeholder class="h-full m-4" />
+            </template>
+          </USlideover>
           <UColorModeButton class="cursor-pointer" />
         </template>
       </UDashboardNavbar>

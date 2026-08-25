@@ -40,6 +40,12 @@ export function useNavigation() {
       description: 'Link Instagram posts to inventory items and set prices.'
     },
     {
+      label: 'Inbox',
+      icon: 'i-lucide-inbox',
+      to: '/inbox',
+      description: 'Unified Inbox for Instagram and Whatsapp.'
+    },
+    {
       label: 'Customers',
       icon: 'i-lucide-users',
       to: '/customers',
@@ -48,8 +54,13 @@ export function useNavigation() {
     {
       label: 'Settings',
       icon: 'i-lucide-settings',
-      to: '/settings',
-      description: 'Manage Meta Webhook connection and 15-minute hold timer rules.'
+      description: 'Manage Meta Webhook connection and 15-minute hold timer rules.',
+      children: [
+        {
+          label: 'General',
+          to: '/settings'
+        }
+      ]
     }
   ])
 

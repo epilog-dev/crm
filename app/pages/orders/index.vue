@@ -6,6 +6,6 @@ definePageMeta({
 
 <template>
   <div>
-      order kanban
+      ORDER KANBAN
   </div>
 </template>
