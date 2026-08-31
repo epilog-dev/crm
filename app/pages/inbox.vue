@@ -262,9 +262,9 @@ const sendMessage = () => {
               </div>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 sm:gap-2">
               <!-- Linked Orders Badge list for repeat buyer -->
-              <div v-if="activeChat.orderIds.length > 0" class="hidden sm:flex items-center gap-1">
+              <div v-if="activeChat.orderIds.length > 0" class="hidden md:flex items-center gap-1">
                 <UBadge v-for="id in activeChat.orderIds" :key="id" color="primary" variant="subtle">
                   {{ id }}
                 </UBadge>
@@ -274,16 +274,18 @@ const sendMessage = () => {
               <UButton
                 :to="`https://instagram.com/direct/t/${activeChat.handle.replace('@', '')}`"
                 target="_blank"
-                label="Message on Instagram"
                 icon="i-simple-icons-instagram"
                 color="neutral"
                 variant="outline"
                 size="sm"
                 class="font-medium cursor-pointer"
-              />
+                title="Message on Instagram"
+              >
+                <span class="hidden sm:inline">Message on IG</span>
+              </UButton>
 
               <UButton
-                label="+ Create Order"
+                label="+ Order"
                 color="primary"
                 size="sm"
                 class="font-bold cursor-pointer shadow-xs"
@@ -293,12 +295,12 @@ const sendMessage = () => {
           </div>
 
           <!-- Messages Stream -->
-          <div class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4">
             <div
               v-for="msg in activeChat.messages"
               :key="msg.id"
               :class="[
-                'flex flex-col max-w-[75%]',
+                'flex flex-col max-w-[88%] sm:max-w-[75%]',
                 msg.sender === 'me' ? 'ml-auto items-end' : 'mr-auto items-start'
               ]"
             >
