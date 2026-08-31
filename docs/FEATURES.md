@@ -5,6 +5,8 @@
 >
 > Instagram is where customers discover products and start sales conversations. Our application sits directly between Instagram DMs and fulfillment—enabling sellers to turn a confirmed DM into a tracked order without maintaining a separate storefront, catalog, or manual copy-pasting.
 
+- 📌 **Implementation Roadmap**: See [`docs/IMPLEMENTATION_ORDER.md`](file:///Users/moonshiner/Workspace/dummy-projects/crm/docs/IMPLEMENTATION_ORDER.md) for step-by-step build order.
+
 ---
 
 ## 🚀 Key Implemented Features
@@ -19,6 +21,7 @@
 ### 2. Unified DM Sales Inbox
 - **Location**: [`app/pages/inbox.vue`](file:///Users/moonshiner/Workspace/dummy-projects/crm/app/pages/inbox.vue)
 - **Real-Time DM Conversations**: Integrated Instagram DM list with unread counters and live Meta API indicators.
+- **Subtle SVG Chat Doodle Background Pattern**: Custom inline SVG pattern featuring chat speech bubbles, stars, and shopping bag doodles adaptively styled for light mode (`stroke-slate-400 opacity-15`) and dark mode (`stroke-neutral-600 opacity-25`).
 - **`[ + Create Order ]` Workflow**: Instant modal auto-attaching buyer handle (`@maria`), item, variant, and price. Generates a unique order link (`/order/ORD-1082`) and posts it directly into the chat.
 - **Repeat Customer Support**: Handles multiple order IDs per buyer (`orderIds: ["ORD-1082", "ORD-1042"]`) with repeat buyer badges (`+1`, `+2`).
 - **Quick Reply Snippets Bar**: One-tap pre-formatted response chips (`📦 In Stock?`, `🚚 Delivery Time`, `💳 Payment Info`, `⚡ Create Order Link`).

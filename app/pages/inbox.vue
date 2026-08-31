@@ -294,8 +294,8 @@ const sendMessage = () => {
             </div>
           </div>
 
-          <!-- Messages Stream with Customer Delivery Summary Banner -->
-          <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4">
+          <!-- Messages Stream with Customer Delivery Summary Banner & Subtle SVG Chat Doodle Pattern -->
+          <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 relative bg-[url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60" fill="none" stroke="%2394a3b8" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.15"><path d="M12 10h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H16l-4 4v-4h-0a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/><path d="M38 35l2 4 4 0.5-3 3 0.8 4.5-3.8-2-3.8 2 0.8-4.5-3-3 4.4-0.5z"/><path d="M42 12l2 2-2 2 2-2z"/><path d="M10 40a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v6H10v-6z"/><path d="M48 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M22 48a2 2 0 1 0 4 0 2 2 0 1 0-4 0z"/></svg>')] dark:bg-[url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60" fill="none" stroke="%23525252" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.25"><path d="M12 10h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H16l-4 4v-4h-0a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/><path d="M38 35l2 4 4 0.5-3 3 0.8 4.5-3.8-2-3.8 2 0.8-4.5-3-3 4.4-0.5z"/><path d="M42 12l2 2-2 2 2-2z"/><path d="M10 40a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v6H10v-6z"/><path d="M48 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M22 48a2 2 0 1 0 4 0 2 2 0 1 0-4 0z"/></svg>')]">
             <!-- Customer Delivery Summary Banner (if active chat has order) -->
             <div v-if="activeChat.orderIds.length > 0" class="p-3 rounded-xl bg-elevated/40 border border-default text-xs flex items-center justify-between gap-3 shadow-xs">
               <div class="flex items-center gap-2 min-w-0">
