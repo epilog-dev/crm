@@ -154,46 +154,33 @@ const sendMessage = () => {
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh-4rem)] border border-default rounded-lg overflow-hidden bg-background">
-    <!-- Sidebar / Chat List -->
-    <div
-      :class="[
-        'w-full md:w-80 lg:w-96 border-r border-default flex flex-col bg-elevated/20 shrink-0',
-        activeChatId !== null ? 'hidden md:flex' : 'flex'
-      ]"
-    >
-      <!-- Search and Tabs Header -->
-      <div class="p-4 space-y-3 border-b border-default bg-background">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-bold text-highlighted">Messages</h2>
-          <span class="text-xs px-2 py-0.5 rounded-full bg-neutral/10 dark:bg-neutral/85 text-muted font-medium">
-            {{ conversations.reduce((acc, c) => acc + c.unreadCount, 0) }} unread
-          </span>
+  <div class="flex-1 flex flex-col min-h-0">
+    <div class="flex flex-1 min-h-0 bg-background">
+      <!-- Chat List Sidebar -->
+      <div
+        :class="[
+          'w-full md:w-80 lg:w-96 border-r border-default flex flex-col bg-elevated/20 shrink-0',
+          activeChatId !== null ? 'hidden md:flex' : 'flex'
+        ]"
+      >
+        <div class="p-4 space-y-3 border-b border-default bg-background">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-simple-icons-instagram" class="size-5 text-pink-500" />
+              <h2 class="text-base font-bold text-highlighted">Instagram Sales DM</h2>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 font-semibold">
+              Meta API Live
+            </span>
+          </div>
+          <UInput
+            v-model="searchQuery"
+            icon="i-lucide-search"
+            placeholder="Search DMs or buyer handle..."
+            size="sm"
+            class="w-full"
+          />
         </div>
-        <UInput
-          v-model="searchQuery"
-          icon="i-lucide-search"
-          placeholder="Search chats or messages..."
-          size="sm"
-          class="w-full"
-        />
-        <div class="flex gap-1 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg">
-          <button
-            v-for="tab in tabs"
-            :key="tab.value"
-            @click="activeTab = tab.value"
-            :class="[
-              'flex-1 flex items-center justify-center gap-1.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer',
-              activeTab === tab.value
-                ? 'bg-background shadow-xs text-highlighted'
-                : 'text-dimmed hover:text-highlighted'
-            ]"
-          >
-            <UIcon :name="tab.icon" class="size-3.5" />
-            <span>{{ tab.label }}</span>
-          </button>
-        </div>
-      </div>
 
         <!-- Conversations list -->
         <div class="flex-1 overflow-y-auto divide-y divide-default/50">
@@ -348,6 +335,6 @@ const sendMessage = () => {
           </div>
         </form>
       </template>
-    </div>
+    </UModal>
   </div>
 </template>

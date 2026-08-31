@@ -86,44 +86,31 @@ function handleDownload() {
     </UDashboardSidebar>
 
     <UDashboardPanel>
-      <template #header
-        ><UDashboardNavbar>
-          <template #left>
-            <UDashboardSidebarCollapse class="cursor-pointer" />
-            <h1 class="font-semibold">
-              {{ $route.meta.title || "Dashboard" }}
-            </h1>
-          </template>
-          <template #right>
-            <USlideover title="Notifications">
-              <div class="relative inline-flex">
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  icon="i-lucide-bell"
-                  aria-label="Open notifications"
-                  class="cursor-pointer"
-                />
-                <UBadge
-                  color="error"
-                  variant="solid"
-                  size="xs"
-                  class="absolute top-0 -right-1 rounded-full p-0 h-2 w-2 min-w-0"
-                />
+      <UDashboardNavbar>
+        <template #left>
+          <UDashboardSidebarCollapse class="cursor-pointer" />
+          <h1 class="font-semibold text-sm md:text-base text-highlighted">{{ $route.meta.title || "Sales Workspace" }}</h1>
+        </template>
+        <template #right>
+          <USlideover title="Notifications">
+            <div class="relative inline-flex">
+              <UButton color="neutral" variant="ghost" icon="i-lucide-bell" aria-label="Open notifications"
+                class="cursor-pointer" />
+              <UBadge color="error" variant="solid" size="xs"
+                class="absolute top-0 -right-1 rounded-full p-0 h-2 w-2 min-w-0" />
+            </div>
+            <template #body>
+              <div class="h-full flex items-center justify-center text-muted">
+                No new notifications
               </div>
-              <template #body>
-                <div class="h-full flex items-center justify-center text-muted">
-                  No new notifications
-                </div>
-              </template>
-            </USlideover>
-            <UColorModeButton class="cursor-pointer" />
-          </template> </UDashboardNavbar
-      ></template>
-
-      <template #body>
+            </template>
+          </USlideover>
+          <UColorModeButton class="cursor-pointer" />
+        </template>
+      </UDashboardNavbar>
+      <div class="flex-1 flex flex-col min-h-0 overflow-y-auto">
         <slot />
-      </template>
+      </div>
     </UDashboardPanel>
     <UDashboardSearch :groups="customSearchGroups" />
   </UDashboardGroup>
