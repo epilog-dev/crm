@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 useSeoMeta({
   title: 'Sales Dashboard - Instagram DM Sales Workspace',
   description: 'Overview of Instagram DM sales, conversion rate, pending payments, and recent orders.'
 })
+
+// Focus Mode (Minimalist ADHD-friendly mode vs Full Analytics)
+const isFocusMode = ref(false)
 
 // Interactive Onboarding Checklist Steps
 const setupSteps = ref([
@@ -146,7 +149,30 @@ const activeDmsList = ref([
         </p>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-3 shrink-0 flex-wrap">
+        <!-- Focus Mode Toggle Switch -->
+        <div class="flex items-center gap-2 p-1.5 rounded-xl border border-default bg-background">
+          <button
+            type="button"
+            @click="isFocusMode = !isFocusMode"
+            :class="[
+              'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+              isFocusMode ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
+            ]"
+          >
+            <span
+              :class="[
+                'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                isFocusMode ? 'translate-x-4' : 'translate-x-0'
+              ]"
+            />
+          </button>
+          <span class="text-xs font-bold text-highlighted flex items-center gap-1">
+            <UIcon name="i-lucide-sparkles" class="size-3.5 text-amber-500" />
+            Focus Mode
+          </span>
+        </div>
+
         <UButton
           to="/inbox"
           label="Open Sales DM Inbox"
@@ -167,8 +193,44 @@ const activeDmsList = ref([
       </div>
     </div>
 
-    <!-- Seller Onboarding & Flow Progress Checklist -->
-    <div class="p-5 rounded-2xl border border-default bg-background space-y-4 shadow-xs">
+    <!-- MINIMALIST FOCUS MODE VIEW (Clean, distraction-free view with zero noise) -->
+    <div v-if="isFocusMode" class="p-8 rounded-2xl border border-primary/30 bg-primary/5 text-center space-y-6 max-w-2xl mx-auto my-6 shadow-sm">
+      <div class="size-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+        <UIcon name="i-lucide-sparkles" class="size-8" />
+      </div>
+
+      <div class="space-y-1">
+        <h3 class="text-xl font-extrabold text-highlighted">Focus Mode Active</h3>
+        <p class="text-xs text-dimmed">Distraction-free workspace. Zero analytics noise, metrics, or cluttered charts.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+        <!-- Action 1: Inbox -->
+        <NuxtLink to="/inbox" class="p-5 rounded-xl border border-default bg-background hover:border-primary transition-all space-y-2 group">
+          <div class="flex items-center justify-between">
+            <UIcon name="i-simple-icons-instagram" class="size-6 text-pink-500" />
+            <UBadge color="primary" variant="subtle" size="xs">8 Active DMs</UBadge>
+          </div>
+          <h4 class="font-bold text-sm text-highlighted group-hover:text-primary">1. Reply & Create Orders</h4>
+          <p class="text-xs text-dimmed">Chat with buyers in DM & generate 1-click order links.</p>
+        </NuxtLink>
+
+        <!-- Action 2: Orders -->
+        <NuxtLink to="/orders" class="p-5 rounded-xl border border-default bg-background hover:border-primary transition-all space-y-2 group">
+          <div class="flex items-center justify-between">
+            <UIcon name="i-lucide-shopping-bag" class="size-6 text-emerald-500" />
+            <UBadge color="warning" variant="subtle" size="xs">3 Pending Payment</UBadge>
+          </div>
+          <h4 class="font-bold text-sm text-highlighted group-hover:text-primary">2. Fulfill Orders & Print Slips</h4>
+          <p class="text-xs text-dimmed">Verify UPI payments & print 4x6 courier labels.</p>
+        </NuxtLink>
+      </div>
+    </div>
+
+    <!-- STANDARD FULL DASHBOARD VIEW (Checklists + Metrics + Tables) -->
+    <template v-else>
+      <!-- Seller Onboarding & Flow Progress Checklist -->
+      <div class="p-5 rounded-2xl border border-default bg-background space-y-4 shadow-xs">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 class="font-bold text-base text-highlighted flex items-center gap-2">
@@ -414,8 +476,8 @@ const activeDmsList = ref([
             DM → Customer says <em>"I'll take it"</em> → Seller clicks <strong>+ Create Order</strong> → Customer enters delivery info → Seller updates payment manually (`Pending` → `Paid`).
           </p>
         </div>
+        </div>
       </div>
-
-    </div>
+    </template>
   </div>
 </template>

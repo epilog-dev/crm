@@ -294,8 +294,24 @@ const sendMessage = () => {
             </div>
           </div>
 
-          <!-- Messages Stream -->
+          <!-- Messages Stream with Customer Delivery Summary Banner -->
           <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4">
+            <!-- Customer Delivery Summary Banner (if active chat has order) -->
+            <div v-if="activeChat.orderIds.length > 0" class="p-3 rounded-xl bg-elevated/40 border border-default text-xs flex items-center justify-between gap-3 shadow-xs">
+              <div class="flex items-center gap-2 min-w-0">
+                <UIcon name="i-lucide-map-pin" class="size-4 text-emerald-500 shrink-0" />
+                <div class="min-w-0 truncate">
+                  <span class="font-bold text-highlighted">Delivery Summary:</span>
+                  <span class="text-dimmed ml-1">
+                    {{ activeChat.name === 'Maria Santos' ? '12 Green Park, Bandra West, Mumbai (400050) • 9876543210' : 'Address details confirmed on order link' }}
+                  </span>
+                </div>
+              </div>
+              <UBadge color="success" variant="subtle" size="xs" class="shrink-0 font-bold">
+                {{ activeChat.orderIds[0] }} Linked
+              </UBadge>
+            </div>
+
             <div
               v-for="msg in activeChat.messages"
               :key="msg.id"
@@ -306,13 +322,24 @@ const sendMessage = () => {
             >
               <div
                 :class="[
-                  'rounded-2xl px-4 py-2.5 text-sm whitespace-pre-line',
+                  'rounded-2xl px-4 py-2.5 text-sm whitespace-pre-line relative group',
                   msg.sender === 'me'
                     ? 'bg-primary text-inverted rounded-tr-none'
                     : 'bg-neutral-100 dark:bg-neutral-800 text-highlighted rounded-tl-none'
                 ]"
               >
                 {{ msg.text }}
+
+                <!-- 1-Click Copy Link Floating Button for Order Messages -->
+                <button
+                  v-if="msg.text.includes('/order/')"
+                  type="button"
+                  @click="navigator.clipboard.writeText(msg.text.split('\n').pop() || '')"
+                  class="mt-2 text-[10px] px-2 py-0.5 rounded bg-background/20 hover:bg-background/40 font-bold flex items-center gap-1 cursor-pointer transition-all border border-white/20"
+                >
+                  <UIcon name="i-lucide-copy" class="size-3" />
+                  <span>Copy Order Link</span>
+                </button>
               </div>
               <span class="text-[10px] text-dimmed mt-1 px-1">{{ msg.time }}</span>
             </div>
