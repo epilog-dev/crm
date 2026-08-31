@@ -1,382 +1,384 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
+
 definePageMeta({
-  title: 'Orders Kanban Board'
+  title: 'Order Management Dashboard'
 })
 
 useSeoMeta({
-  title: 'Orders Kanban - Nudge CRM'
+  title: 'Orders Dashboard - Instagram DM Sales'
 })
 
-interface OrderItem {
+export interface Order {
   id: string
   customer: {
     name: string
     handle: string
+    phone?: string
+    address?: string
+    pincode?: string
     avatar?: string
   }
-  product: string
+  item: string
+  variant: string
   price: number
-  platform: 'Instagram' | 'WhatsApp' | 'Direct'
-  tag?: {
-    label: string
-    color: 'warning' | 'info' | 'success' | 'neutral' | 'error'
-  }
+  currency: string
+  status: 'Confirmed' | 'Awaiting Payment' | 'Paid' | 'Shipped' | 'Delivered' | 'Cancelled'
+  paymentStatus: 'Pending' | 'Paid'
   time: string
-  notes?: string
+  orderLink: string
 }
 
-interface Column {
-  id: string
-  title: string
-  badgeColor: 'warning' | 'neutral' | 'success' | 'info'
-  items: OrderItem[]
-}
-
-const columns = ref<Column[]>([
+const orders = ref<Order[]>([
   {
-    id: 'hold',
-    title: '15-Min Hold',
-    badgeColor: 'warning',
-    items: [
-      {
-        id: 'ORD-1082',
-        customer: {
-          name: 'Sarah Jenkins',
-          handle: '@sarah.j',
-          avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100'
-        },
-        product: 'Vintage Oversized Blazer',
-        price: 68.00,
-        platform: 'Instagram',
-        tag: { label: 'Expires in 6m', color: 'warning' },
-        time: '9 mins ago'
-      },
-      {
-        id: 'ORD-1083',
-        customer: {
-          name: 'Liam Vance',
-          handle: '@liam_v',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'
-        },
-        product: 'Y2K Cargo Pants (M)',
-        price: 52.00,
-        platform: 'Instagram',
-        tag: { label: 'Hold confirmed', color: 'info' },
-        time: '12 mins ago'
-      }
-    ]
+    id: 'ORD-1082',
+    customer: {
+      name: 'Maria Santos',
+      handle: '@maria',
+      phone: '9876543210',
+      address: '12 Green Park, Bandra West, Mumbai',
+      pincode: '400050',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100'
+    },
+    item: 'Nike Vintage Windbreaker Jacket',
+    variant: 'M',
+    price: 1500,
+    currency: '₹',
+    status: 'Confirmed',
+    paymentStatus: 'Pending',
+    time: '10 mins ago',
+    orderLink: '/order/ORD-1082'
   },
   {
-    id: 'pending_payment',
-    title: 'Pending Payment',
-    badgeColor: 'info',
-    items: [
-      {
-        id: 'ORD-1079',
-        customer: {
-          name: 'Elena Rostova',
-          handle: '@elena_r',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
-        },
-        product: 'Silk Slip Dress (Emerald)',
-        price: 84.00,
-        platform: 'WhatsApp',
-        tag: { label: 'Sent invoice', color: 'neutral' },
-        time: '24 mins ago'
-      }
-    ]
+    id: 'ORD-1079',
+    customer: {
+      name: 'Priya Sharma',
+      handle: '@priya_s',
+      phone: '9876543211',
+      address: 'Flat 402, Sunshine Apartments, MG Road, Bengaluru',
+      pincode: '560001',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
+    },
+    item: 'Silk Slip Dress (Emerald)',
+    variant: 'S',
+    price: 2400,
+    currency: '₹',
+    status: 'Awaiting Payment',
+    paymentStatus: 'Pending',
+    time: '1 hour ago',
+    orderLink: '/order/ORD-1079'
   },
   {
-    id: 'paid_processing',
-    title: 'Paid & Packing',
-    badgeColor: 'success',
-    items: [
-      {
-        id: 'ORD-1076',
-        customer: {
-          name: 'Marcus Chen',
-          handle: '@marcus_c',
-          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'
-        },
-        product: 'Raw Denim Jacket',
-        price: 110.00,
-        platform: 'Instagram',
-        tag: { label: 'Packing slip ready', color: 'success' },
-        time: '1 hour ago'
-      },
-      {
-        id: 'ORD-1074',
-        customer: {
-          name: 'Amara Diallo',
-          handle: '@amara_d',
-          avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100'
-        },
-        product: 'Handmade Leather Belt',
-        price: 38.00,
-        platform: 'Direct',
-        tag: { label: 'Paid via Revolut', color: 'success' },
-        time: '2 hours ago'
-      }
-    ]
+    id: 'ORD-1076',
+    customer: {
+      name: 'Marcus Chen',
+      handle: '@marcus_c',
+      phone: '9876543212',
+      address: '77 Park Street, Kolkata',
+      pincode: '700016',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'
+    },
+    item: 'Raw Denim Jacket',
+    variant: 'L',
+    price: 3200,
+    currency: '₹',
+    status: 'Paid',
+    paymentStatus: 'Paid',
+    time: '3 hours ago',
+    orderLink: '/order/ORD-1076'
   },
   {
-    id: 'dispatched',
-    title: 'Dispatched / Courier',
-    badgeColor: 'neutral',
-    items: [
-      {
-        id: 'ORD-1071',
-        customer: {
-          name: 'Chloe Bennett',
-          handle: '@chloeb',
-          avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100'
-        },
-        product: 'Chunky Knit Sweater',
-        price: 65.00,
-        platform: 'Instagram',
-        tag: { label: 'Tracking sent', color: 'neutral' },
-        time: 'Yesterday'
-      }
-    ]
+    id: 'ORD-1071',
+    customer: {
+      name: 'Chloe Bennett',
+      handle: '@chloeb',
+      phone: '9876543213',
+      address: '45 Jubilee Hills, Hyderabad',
+      pincode: '500033',
+      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100'
+    },
+    item: 'Chunky Knit Sweater',
+    variant: 'Free Size',
+    price: 1800,
+    currency: '₹',
+    status: 'Shipped',
+    paymentStatus: 'Paid',
+    time: 'Yesterday',
+    orderLink: '/order/ORD-1071'
   }
 ])
 
 const search = ref('')
-const draggedItemId = ref<string | null>(null)
-const draggedFromColId = ref<string | null>(null)
-const selectedOrder = ref<OrderItem | null>(null)
+const selectedStatusFilter = ref('All')
+const selectedOrder = ref<Order | null>(null)
 const isSlideoverOpen = ref(false)
 
-// Drag & Drop handlers
-function onDragStart(itemId: string, colId: string) {
-  draggedItemId.value = itemId
-  draggedFromColId.value = colId
-}
+const statusOptions = ['All', 'Confirmed', 'Awaiting Payment', 'Paid', 'Shipped', 'Delivered', 'Cancelled']
 
-function onDrop(targetColId: string) {
-  if (!draggedItemId.value || !draggedFromColId.value) return
-  if (draggedFromColId.value === targetColId) return
+const filteredOrders = computed(() => {
+  return orders.value.filter(o => {
+    const matchesStatus = selectedStatusFilter.value === 'All' || o.status === selectedStatusFilter.value
+    const q = search.value.toLowerCase()
+    const matchesSearch = !q ||
+      o.id.toLowerCase().includes(q) ||
+      o.item.toLowerCase().includes(q) ||
+      o.customer.name.toLowerCase().includes(q) ||
+      o.customer.handle.toLowerCase().includes(q)
+    return matchesStatus && matchesSearch
+  })
+})
 
-  const sourceCol = columns.value.find(c => c.id === draggedFromColId.value)
-  const targetCol = columns.value.find(c => c.id === targetColId)
-
-  if (!sourceCol || !targetCol) return
-
-  const itemIndex = sourceCol.items.findIndex(i => i.id === draggedItemId.value)
-  if (itemIndex > -1) {
-    const [movedItem] = sourceCol.items.splice(itemIndex, 1)
-    targetCol.items.unshift(movedItem)
-  }
-
-  draggedItemId.value = null
-  draggedFromColId.value = null
-}
-
-function openOrderDetails(order: OrderItem) {
+function openOrderDetails(order: Order) {
   selectedOrder.value = order
   isSlideoverOpen.value = true
 }
 
-function filterItems(items: OrderItem[]) {
-  if (!search.value) return items
-  const q = search.value.toLowerCase()
-  return items.filter(
-    item =>
-      item.id.toLowerCase().includes(q) ||
-      item.product.toLowerCase().includes(q) ||
-      item.customer.name.toLowerCase().includes(q) ||
-      item.customer.handle.toLowerCase().includes(q)
-  )
+function updateOrderStatus(newStatus: Order['status']) {
+  if (selectedOrder.value) {
+    selectedOrder.value.status = newStatus
+  }
 }
 
-function totalOrdersCount() {
-  return columns.value.reduce((acc, col) => acc + col.items.length, 0)
+function togglePaymentStatus() {
+  if (selectedOrder.value) {
+    if (selectedOrder.value.paymentStatus === 'Pending') {
+      selectedOrder.value.paymentStatus = 'Paid'
+      if (selectedOrder.value.status === 'Awaiting Payment' || selectedOrder.value.status === 'Confirmed') {
+        selectedOrder.value.status = 'Paid'
+      }
+    } else {
+      selectedOrder.value.paymentStatus = 'Pending'
+      selectedOrder.value.status = 'Awaiting Payment'
+    }
+  }
+}
+
+function getBadgeColor(status: Order['status']) {
+  switch (status) {
+    case 'Confirmed': return 'neutral'
+    case 'Awaiting Payment': return 'warning'
+    case 'Paid': return 'success'
+    case 'Shipped': return 'info'
+    case 'Delivered': return 'success'
+    case 'Cancelled': return 'error'
+    default: return 'neutral'
+  }
 }
 </script>
 
 <template>
   <div class="p-6 space-y-4">
-    <!-- Top Filter & Action Bar -->
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-2">
+    <!-- Header Summary Stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="p-4 bg-background border border-default rounded-xl">
+        <span class="text-xs text-dimmed">Total Orders</span>
+        <p class="text-xl font-bold text-highlighted mt-0.5">{{ orders.length }}</p>
+      </div>
+      <div class="p-4 bg-background border border-default rounded-xl">
+        <span class="text-xs text-amber-500 font-medium">Awaiting Payment</span>
+        <p class="text-xl font-bold text-amber-500 mt-0.5">
+          {{ orders.filter(o => o.status === 'Awaiting Payment').length }}
+        </p>
+      </div>
+      <div class="p-4 bg-background border border-default rounded-xl">
+        <span class="text-xs text-emerald-500 font-medium">Paid Orders</span>
+        <p class="text-xl font-bold text-emerald-500 mt-0.5">
+          {{ orders.filter(o => o.paymentStatus === 'Paid').length }}
+        </p>
+      </div>
+      <div class="p-4 bg-background border border-default rounded-xl">
+        <span class="text-xs text-blue-500 font-medium">Shipped</span>
+        <p class="text-xl font-bold text-blue-500 mt-0.5">
+          {{ orders.filter(o => o.status === 'Shipped').length }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Filters & Action Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+      <div class="flex items-center gap-2 flex-1 max-w-md">
         <UInput
           v-model="search"
           icon="i-lucide-search"
-          placeholder="Filter orders, buyers, products..."
-          class="w-72"
+          placeholder="Filter by Order ID, Buyer (@maria), or Item..."
+          class="w-full"
         />
-        <UBadge variant="subtle" color="neutral">
-          {{ totalOrdersCount() }} Orders
-        </UBadge>
       </div>
 
       <div class="flex items-center gap-2">
+        <select
+          v-model="selectedStatusFilter"
+          class="text-xs px-3 py-1.5 rounded-lg border border-default bg-background text-highlighted font-medium cursor-pointer"
+        >
+          <option v-for="opt in statusOptions" :key="opt" :value="opt">
+            Status: {{ opt }}
+          </option>
+        </select>
+
         <UButton
-          to="/orders/slips"
-          label="Print Slips"
-          icon="i-lucide-printer"
-          variant="outline"
-          color="neutral"
-        />
-        <UButton
-          label="New Order"
-          icon="i-lucide-plus"
+          to="/inbox"
+          label="+ Create Order from DM"
+          icon="i-lucide-message-square"
           color="primary"
+          class="font-semibold cursor-pointer"
         />
       </div>
     </div>
 
-    <!-- Kanban Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
-      <div
-        v-for="column in columns"
-        :key="column.id"
-        class="bg-elevated/40 border border-default rounded-xl p-3 flex flex-col min-h-[500px]"
-        @dragover.prevent
-        @drop="onDrop(column.id)"
-      >
-        <!-- Column Header -->
-        <div class="flex items-center justify-between pb-3 mb-2 border-b border-default">
-          <div class="flex items-center gap-2">
-            <span class="font-medium text-sm text-highlighted">{{ column.title }}</span>
-            <UBadge
-              :color="column.badgeColor"
-              variant="subtle"
-              size="xs"
-              class="rounded-full px-2"
-            >
-              {{ filterItems(column.items).length }}
-            </UBadge>
-          </div>
-          <UButton
-            icon="i-lucide-plus"
-            variant="ghost"
-            color="neutral"
-            size="xs"
-            aria-label="Add item"
-          />
-        </div>
-
-        <!-- Cards List -->
-        <div class="space-y-2.5 flex-1 overflow-y-auto">
-          <div
-            v-for="item in filterItems(column.items)"
-            :key="item.id"
-            draggable="true"
-            class="group bg-default border border-default hover:border-highlighted/30 rounded-lg p-3 shadow-xs cursor-grab active:cursor-grabbing transition-all hover:shadow-sm space-y-2.5"
-            @dragstart="onDragStart(item.id, column.id)"
-            @click="openOrderDetails(item)"
+    <!-- Orders Table -->
+    <div class="border border-default rounded-xl overflow-hidden bg-background">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-elevated/50 border-b border-default text-muted uppercase font-semibold">
+          <tr>
+            <th class="p-3">Order ID</th>
+            <th class="p-3">Customer</th>
+            <th class="p-3">Item & Variant</th>
+            <th class="p-3">Price</th>
+            <th class="p-3">Payment</th>
+            <th class="p-3">Order Lifecycle Status</th>
+            <th class="p-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-default">
+          <tr
+            v-for="order in filteredOrders"
+            :key="order.id"
+            class="hover:bg-elevated/20 transition-colors cursor-pointer"
+            @click="openOrderDetails(order)"
           >
-            <!-- Card Header: ID & Price -->
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-muted font-mono tracking-tight">{{ item.id }}</span>
-              <span class="text-xs font-bold text-highlighted">${{ item.price.toFixed(2) }}</span>
-            </div>
-
-            <!-- Product title -->
-            <p class="text-sm font-medium text-highlighted leading-snug line-clamp-2">
-              {{ item.product }}
-            </p>
-
-            <!-- Customer info -->
-            <div class="flex items-center gap-2 pt-1 border-t border-default/50">
-              <UAvatar
-                :src="item.customer.avatar"
-                :alt="item.customer.name"
-                size="xs"
-              />
-              <div class="text-xs min-w-0 flex-1">
-                <p class="text-highlighted font-medium truncate">{{ item.customer.name }}</p>
-                <p class="text-muted text-[11px] truncate">{{ item.customer.handle }}</p>
+            <td class="p-3 font-mono font-bold text-highlighted">
+              {{ order.id }}
+            </td>
+            <td class="p-3">
+              <div class="flex items-center gap-2">
+                <UAvatar :src="order.customer.avatar" :alt="order.customer.name" size="xs" />
+                <div>
+                  <p class="font-bold text-highlighted">{{ order.customer.name }}</p>
+                  <p class="text-dimmed text-[11px]">{{ order.customer.handle }}</p>
+                </div>
               </div>
-            </div>
-
-            <!-- Card Footer: Tag & Platform / Time -->
-            <div class="flex items-center justify-between pt-1 text-[11px] text-muted">
+            </td>
+            <td class="p-3">
+              <p class="font-medium text-highlighted">{{ order.item }}</p>
+              <span class="text-muted text-[11px]">Variant: {{ order.variant }}</span>
+            </td>
+            <td class="p-3 font-bold text-highlighted">
+              {{ order.currency }}{{ order.price.toLocaleString('en-IN') }}
+            </td>
+            <td class="p-3">
               <UBadge
-                v-if="item.tag"
-                :color="item.tag.color"
+                :color="order.paymentStatus === 'Paid' ? 'success' : 'warning'"
                 variant="subtle"
                 size="xs"
               >
-                {{ item.tag.label }}
+                {{ order.paymentStatus === 'Paid' ? 'Paid' : 'Pending' }}
               </UBadge>
-              <div class="flex items-center gap-1 ml-auto">
-                <UIcon name="i-lucide-clock" class="size-3" />
-                <span>{{ item.time }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empty dropzone state -->
-          <div
-            v-if="filterItems(column.items).length === 0"
-            class="h-32 border-2 border-dashed border-default/70 rounded-lg flex flex-col items-center justify-center text-xs text-muted"
-          >
-            <UIcon name="i-lucide-inbox" class="size-5 mb-1 text-dimmed" />
-            <span>Drop orders here</span>
-          </div>
-        </div>
-      </div>
+            </td>
+            <td class="p-3">
+              <UBadge :color="getBadgeColor(order.status)" variant="subtle" size="xs">
+                {{ order.status }}
+              </UBadge>
+            </td>
+            <td class="p-3 text-right">
+              <UButton
+                label="View / Manage"
+                size="xs"
+                color="neutral"
+                variant="outline"
+                @click.stop="openOrderDetails(order)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Order Details Slideover -->
+    <!-- Order Management Slideover -->
     <USlideover
       v-model:open="isSlideoverOpen"
-      :title="selectedOrder ? `${selectedOrder.id} - ${selectedOrder.product}` : 'Order Details'"
-      description="Order status and customer information"
+      :title="selectedOrder ? `${selectedOrder.id} - ${selectedOrder.customer.handle}` : 'Order details'"
+      description="Manage order lifecycle & payment status"
     >
       <template #body>
         <div v-if="selectedOrder" class="space-y-6">
-          <!-- Buyer Summary -->
-          <div class="p-4 rounded-lg bg-elevated/50 border border-default space-y-3">
+          <!-- Buyer Info -->
+          <div class="p-4 rounded-xl bg-elevated/40 border border-default space-y-2">
             <div class="flex items-center gap-3">
-              <UAvatar
-                :src="selectedOrder.customer.avatar"
-                :alt="selectedOrder.customer.name"
-                size="lg"
-              />
+              <UAvatar :src="selectedOrder.customer.avatar" :alt="selectedOrder.customer.name" size="lg" />
               <div>
-                <h4 class="font-semibold text-highlighted">{{ selectedOrder.customer.name }}</h4>
-                <p class="text-xs text-muted">{{ selectedOrder.customer.handle }} • {{ selectedOrder.platform }}</p>
+                <h4 class="font-bold text-highlighted text-base">{{ selectedOrder.customer.name }}</h4>
+                <p class="text-xs text-dimmed">{{ selectedOrder.customer.handle }}</p>
               </div>
             </div>
+            <div v-if="selectedOrder.customer.phone" class="pt-2 border-t border-default/60 text-xs space-y-1">
+              <p><span class="text-muted">Phone:</span> <span class="text-highlighted font-medium">{{ selectedOrder.customer.phone }}</span></p>
+              <p><span class="text-muted">Delivery Address:</span> <span class="text-highlighted">{{ selectedOrder.customer.address }}, {{ selectedOrder.customer.pincode }}</span></p>
+            </div>
           </div>
 
-          <!-- Order Summary -->
-          <div class="space-y-3">
-            <h5 class="text-xs font-semibold uppercase tracking-wider text-muted">Item Details</h5>
-            <div class="flex justify-between items-center py-2 border-b border-default">
-              <span class="text-sm text-highlighted">{{ selectedOrder.product }}</span>
-              <span class="text-sm font-bold text-highlighted">${{ selectedOrder.price.toFixed(2) }}</span>
+          <!-- Item Details -->
+          <div class="space-y-2">
+            <h5 class="text-xs font-semibold uppercase tracking-wider text-muted">Item & Pricing</h5>
+            <div class="flex justify-between items-center py-2 border-b border-default text-sm">
+              <div>
+                <p class="font-semibold text-highlighted">{{ selectedOrder.item }}</p>
+                <p class="text-xs text-dimmed">Variant: {{ selectedOrder.variant }}</p>
+              </div>
+              <span class="font-bold text-lg text-highlighted">{{ selectedOrder.currency }}{{ selectedOrder.price.toLocaleString('en-IN') }}</span>
             </div>
-            <div class="flex justify-between items-center py-2 border-b border-default text-xs">
-              <span class="text-muted">Status</span>
-              <UBadge v-if="selectedOrder.tag" :color="selectedOrder.tag.color" variant="subtle" size="xs">
-                {{ selectedOrder.tag.label }}
+          </div>
+
+          <!-- Manual Payment Status Toggle (Feature #7) -->
+          <div class="p-4 rounded-xl border border-default space-y-3">
+            <div class="flex justify-between items-center">
+              <div>
+                <h5 class="text-xs font-bold text-highlighted">Manual Payment Status</h5>
+                <p class="text-[11px] text-dimmed">Mark when customer pays via UPI/Bank/COD</p>
+              </div>
+              <UBadge :color="selectedOrder.paymentStatus === 'Paid' ? 'success' : 'warning'" variant="subtle">
+                {{ selectedOrder.paymentStatus }}
               </UBadge>
             </div>
-            <div class="flex justify-between items-center py-2 text-xs">
-              <span class="text-muted">Activity</span>
-              <span class="text-muted">{{ selectedOrder.time }}</span>
+            <UButton
+              :label="selectedOrder.paymentStatus === 'Paid' ? 'Mark as Pending' : 'Mark as Paid'"
+              :color="selectedOrder.paymentStatus === 'Paid' ? 'warning' : 'success'"
+              size="sm"
+              block
+              class="font-bold cursor-pointer"
+              @click="togglePaymentStatus"
+            />
+          </div>
+
+          <!-- Order Status Lifecycle Selector (Feature #6) -->
+          <div class="space-y-3">
+            <h5 class="text-xs font-semibold uppercase tracking-wider text-muted">Update Order Status Flow</h5>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="st in ['Confirmed', 'Awaiting Payment', 'Paid', 'Shipped', 'Delivered', 'Cancelled'] as const"
+                :key="st"
+                @click="updateOrderStatus(st)"
+                :class="[
+                  'py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer text-left border',
+                  selectedOrder.status === st
+                    ? 'bg-primary text-inverted border-primary shadow-xs'
+                    : 'bg-background border-default text-dimmed hover:text-highlighted'
+                ]"
+              >
+                {{ st }}
+              </button>
             </div>
           </div>
-        </div>
-      </template>
 
-      <template #footer>
-        <div class="flex items-center justify-between w-full gap-2">
-          <UButton
-            label="Print Slip"
-            icon="i-lucide-printer"
-            variant="outline"
-            color="neutral"
-          />
-          <UButton
-            label="Mark as Paid"
-            color="primary"
-            @click="isSlideoverOpen = false"
-          />
+          <!-- Customer Order Link -->
+          <div class="p-3 bg-elevated/30 rounded-lg border border-default text-xs space-y-1">
+            <span class="text-muted">Unique Customer Order Link:</span>
+            <div class="flex items-center justify-between gap-2 bg-background p-2 rounded border border-default font-mono">
+              <span class="truncate text-highlighted">{{ selectedOrder.orderLink }}</span>
+              <NuxtLink :to="selectedOrder.orderLink" target="_blank" class="text-primary font-bold hover:underline shrink-0">
+                Open Link ↗
+              </NuxtLink>
+            </div>
+          </div>
         </div>
       </template>
     </USlideover>

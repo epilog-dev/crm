@@ -13,54 +13,32 @@ export function useNavigation() {
     {
       label: 'Dashboard',
       icon: 'i-lucide-layout-dashboard',
-      to: '/'
+      to: '/',
+      description: 'Overview of sales metrics, active DMs, and recent orders'
     },
     {
-      label: 'Orders',
-      icon: 'i-lucide-kanban',
-      children: [
-        {
-          label: 'Kanban Board',
-          icon: 'i-lucide-columns-3',
-          description: 'Live pipeline for 15-min holds, paid items, and courier slips.',
-          to: '/orders'
-        },
-        {
-          label: 'Packing Slips',
-          icon: 'i-lucide-printer',
-          description: '1-tap printable delivery slips with buyer landmark details.',
-          to: '/orders/slips'
-        }
-      ]
-    },
-    {
-      label: 'Products',
-      icon: 'i-lucide-tag',
-      to: '/products',
-      description: 'Link Instagram posts to inventory items and set prices.'
-    },
-    {
-      label: 'Inbox',
+      label: 'Sales DM Inbox',
       icon: 'i-lucide-inbox',
       to: '/inbox',
-      description: 'Unified Inbox for Instagram and Whatsapp.'
+      description: 'Instagram DM Sales Inbox & Order creation'
+    },
+    {
+      label: 'Orders Workspace',
+      icon: 'i-lucide-shopping-bag',
+      to: '/orders',
+      description: 'Manage sales pipeline and track order fulfillments'
     },
     {
       label: 'Customers',
       icon: 'i-lucide-users',
       to: '/customers',
-      description: 'View buyer handles, saved local landmarks, and purchase histories.'
+      description: 'View buyer handles, shipping details, and order history'
     },
     {
-      label: 'Settings',
-      icon: 'i-lucide-settings',
-      description: 'Manage Meta Webhook connection and 15-minute hold timer rules.',
-      children: [
-        {
-          label: 'General',
-          to: '/settings'
-        }
-      ]
+      label: 'Instagram Connection',
+      icon: 'i-simple-icons-instagram',
+      to: '/settings',
+      description: 'Connect your Instagram Professional Account'
     }
   ])
 

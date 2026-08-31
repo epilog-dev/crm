@@ -59,10 +59,10 @@ function handleDownload() {
       <template #header="{ collapsed }">
         <div class="flex items-center gap-2.5 font-semibold text-lg">
           <div
-            class="flex size-7 items-center justify-center rounded-lg bg-primary text-inverted font-bold text-sm shrink-0">
-            P
+            class="flex size-7 items-center justify-center rounded-lg bg-pink-500 text-white font-bold text-sm shrink-0">
+            S
           </div>
-          <span v-if="!collapsed" class="tracking-tight text-highlighted text-sm">Plum</span>
+          <span v-if="!collapsed" class="tracking-tight text-highlighted text-sm font-bold">DM Sales</span>
         </div>
       </template>
 
