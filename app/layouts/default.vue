@@ -152,6 +152,12 @@ const customSearchGroups = [
         </template>
 
         <template #right>
+          <!-- Meta API Live Connection Health Badge -->
+          <NuxtLink to="/settings" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-all">
+            <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Meta API Live (@thrift_store_india)</span>
+          </NuxtLink>
+
           <!-- NOTIFICATIONS SLIDEOVER -->
           <USlideover v-model:open="isNotificationsOpen" title="Sales Notifications" description="Live updates on Instagram DMs, orders, and payments.">
             <div class="relative inline-flex">

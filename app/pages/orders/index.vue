@@ -375,6 +375,27 @@ function getBadgeColor(status: Order['status']) {
           </tr>
         </tbody>
       </table>
+
+      <!-- Illustrated Empty State for Orders -->
+      <div v-if="filteredOrders.length === 0" class="py-12 px-4 text-center space-y-3">
+        <div class="size-14 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto">
+          <UIcon name="i-lucide-shopping-bag" class="size-7 text-dimmed" />
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-highlighted">No matching orders found</h4>
+          <p class="text-xs text-dimmed max-w-sm mx-auto mt-0.5">
+            Try adjusting your search query or status filter above, or create a new order directly from a DM.
+          </p>
+        </div>
+        <UButton
+          to="/inbox"
+          label="+ Create Order from DM"
+          icon="i-lucide-message-square"
+          color="primary"
+          size="sm"
+          class="font-bold cursor-pointer"
+        />
+      </div>
     </div>
 
     <!-- VIEW 2: Kanban Board View (Horizontal Scrollable Container for High Volume) -->
@@ -472,9 +493,30 @@ function getBadgeColor(status: Order['status']) {
                 class="font-medium cursor-pointer shrink-0"
               />
             </div>
-            <div v-if="selectedOrder.customer.phone" class="pt-2 border-t border-default/60 text-xs space-y-1">
+            <div v-if="selectedOrder.customer.phone" class="pt-2 border-t border-default/60 text-xs space-y-2">
               <p><span class="text-muted">Phone:</span> <span class="text-highlighted font-medium">{{ selectedOrder.customer.phone }}</span></p>
               <p><span class="text-muted">Delivery Address:</span> <span class="text-highlighted">{{ selectedOrder.customer.address }}, {{ selectedOrder.customer.pincode }}</span></p>
+
+              <!-- Address Actions: 1-Click Copy & Google Maps Search -->
+              <div class="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  @click="navigator.clipboard.writeText(`${selectedOrder.customer.name}\n${selectedOrder.customer.phone}\n${selectedOrder.customer.address}\nPincode: ${selectedOrder.customer.pincode}`)"
+                  class="px-2.5 py-1 rounded bg-background border border-default hover:border-primary/50 text-[11px] font-semibold text-highlighted flex items-center gap-1 cursor-pointer transition-all"
+                >
+                  <UIcon name="i-lucide-copy" class="size-3 text-primary" />
+                  <span>Copy Address</span>
+                </button>
+
+                <a
+                  :href="`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedOrder.customer.address + ' ' + selectedOrder.customer.pincode)}`"
+                  target="_blank"
+                  class="px-2.5 py-1 rounded bg-background border border-default hover:border-primary/50 text-[11px] font-semibold text-highlighted flex items-center gap-1 transition-all"
+                >
+                  <UIcon name="i-lucide-map-pin" class="size-3 text-emerald-500" />
+                  <span>Maps Search</span>
+                </a>
+              </div>
             </div>
           </div>
 
