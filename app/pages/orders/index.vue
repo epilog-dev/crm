@@ -105,15 +105,51 @@ const orders = ref<Order[]>([
     paymentStatus: 'Paid',
     time: 'Yesterday',
     orderLink: '/order/ORD-1071'
+  },
+  {
+    id: 'ORD-1065',
+    customer: {
+      name: 'Ananya Roy',
+      handle: '@ananya_r',
+      phone: '9876543214',
+      address: '14 Salt Lake, Kolkata',
+      pincode: '700091',
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100'
+    },
+    item: 'Vintage Leather Belt',
+    variant: 'Brown',
+    price: 950,
+    currency: '₹',
+    status: 'Delivered',
+    paymentStatus: 'Paid',
+    time: '3 days ago',
+    orderLink: '/order/ORD-1065'
   }
 ])
 
+const viewMode = ref<'table' | 'kanban'>('table')
 const search = ref('')
 const selectedStatusFilter = ref('All')
 const selectedOrder = ref<Order | null>(null)
 const isSlideoverOpen = ref(false)
 
 const statusOptions = ['All', 'Confirmed', 'Awaiting Payment', 'Paid', 'Shipped', 'Delivered', 'Cancelled']
+
+// Kanban Columns mapping
+const kanbanColumns = computed(() => {
+  const cols = [
+    { id: 'Confirmed', title: 'Confirmed', badgeColor: 'neutral' as const },
+    { id: 'Awaiting Payment', title: 'Awaiting Payment', badgeColor: 'warning' as const },
+    { id: 'Paid', title: 'Paid', badgeColor: 'success' as const },
+    { id: 'Shipped', title: 'Shipped', badgeColor: 'info' as const },
+    { id: 'Delivered', title: 'Delivered', badgeColor: 'success' as const }
+  ]
+
+  return cols.map(col => ({
+    ...col,
+    orders: filteredOrders.value.filter(o => o.status === col.id)
+  }))
+})
 
 const filteredOrders = computed(() => {
   return orders.value.filter(o => {
@@ -127,6 +163,25 @@ const filteredOrders = computed(() => {
     return matchesStatus && matchesSearch
   })
 })
+
+// Drag & Drop for Kanban
+const draggedOrderId = ref<string | null>(null)
+
+function onDragStart(orderId: string) {
+  draggedOrderId.value = orderId
+}
+
+function onDrop(targetStatus: Order['status']) {
+  if (!draggedOrderId.value) return
+  const order = orders.value.find(o => o.id === draggedOrderId.value)
+  if (order) {
+    order.status = targetStatus
+    if (targetStatus === 'Paid' || targetStatus === 'Shipped' || targetStatus === 'Delivered') {
+      order.paymentStatus = 'Paid'
+    }
+  }
+  draggedOrderId.value = null
+}
 
 function openOrderDetails(order: Order) {
   selectedOrder.value = order
@@ -167,7 +222,7 @@ function getBadgeColor(status: Order['status']) {
 </script>
 
 <template>
-  <div class="p-6 space-y-4">
+  <div class="p-4 md:p-6 space-y-4">
     <!-- Header Summary Stats -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <div class="p-4 bg-background border border-default rounded-xl">
@@ -194,7 +249,7 @@ function getBadgeColor(status: Order['status']) {
       </div>
     </div>
 
-    <!-- Filters & Action Bar -->
+    <!-- Filters & Action Bar with Table / Kanban View Toggle -->
     <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
       <div class="flex items-center gap-2 flex-1 max-w-md">
         <UInput
@@ -205,7 +260,31 @@ function getBadgeColor(status: Order['status']) {
         />
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- View Toggle (Table vs Kanban) -->
+        <div class="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg border border-default">
+          <button
+            @click="viewMode = 'table'"
+            :class="[
+              'flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer',
+              viewMode === 'table' ? 'bg-background shadow-xs text-highlighted' : 'text-dimmed hover:text-highlighted'
+            ]"
+          >
+            <UIcon name="i-lucide-table" class="size-3.5" />
+            <span>Table View</span>
+          </button>
+          <button
+            @click="viewMode = 'kanban'"
+            :class="[
+              'flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer',
+              viewMode === 'kanban' ? 'bg-background shadow-xs text-highlighted' : 'text-dimmed hover:text-highlighted'
+            ]"
+          >
+            <UIcon name="i-lucide-columns-3" class="size-3.5" />
+            <span>Kanban Board</span>
+          </button>
+        </div>
+
         <select
           v-model="selectedStatusFilter"
           class="text-xs px-3 py-1.5 rounded-lg border border-default bg-background text-highlighted font-medium cursor-pointer"
@@ -225,8 +304,8 @@ function getBadgeColor(status: Order['status']) {
       </div>
     </div>
 
-    <!-- Orders Table -->
-    <div class="border border-default rounded-xl overflow-hidden bg-background">
+    <!-- VIEW 1: Table View -->
+    <div v-if="viewMode === 'table'" class="border border-default rounded-xl overflow-hidden bg-background">
       <table class="w-full text-left text-xs">
         <thead class="bg-elevated/50 border-b border-default text-muted uppercase font-semibold">
           <tr>
@@ -291,6 +370,71 @@ function getBadgeColor(status: Order['status']) {
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- VIEW 2: Kanban Board View (Horizontal Scrollable Container for High Volume) -->
+    <div v-else class="space-y-2">
+      <!-- Kanban Hint -->
+      <p class="text-xs text-dimmed">
+        💡 Drag cards between columns to update status. For large volumes, search/filter above or switch to Table View.
+      </p>
+
+      <div class="flex gap-4 overflow-x-auto pb-4 items-start min-h-[520px] scrollbar-thin">
+        <div
+          v-for="col in kanbanColumns"
+          :key="col.id"
+          class="w-72 shrink-0 bg-elevated/30 border border-default rounded-xl p-3 flex flex-col max-h-[70vh]"
+          @dragover.prevent
+          @drop="onDrop(col.id as Order['status'])"
+        >
+          <!-- Column Header -->
+          <div class="flex items-center justify-between pb-3 mb-2 border-b border-default shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-xs text-highlighted">{{ col.title }}</span>
+              <UBadge :color="col.badgeColor" variant="subtle" size="xs">
+                {{ col.orders.length }}
+              </UBadge>
+            </div>
+          </div>
+
+          <!-- Cards List with Scrollbar for High Volume -->
+          <div class="space-y-2.5 flex-1 overflow-y-auto pr-1">
+            <div
+              v-for="ord in col.orders"
+              :key="ord.id"
+              draggable="true"
+              @dragstart="onDragStart(ord.id)"
+              @click="openOrderDetails(ord)"
+              class="bg-background border border-default hover:border-primary/50 rounded-lg p-3 shadow-xs cursor-grab active:cursor-grabbing transition-all space-y-2"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-primary">{{ ord.id }}</span>
+                <span class="font-bold text-xs text-highlighted">{{ ord.currency }}{{ ord.price.toLocaleString('en-IN') }}</span>
+              </div>
+
+              <p class="text-xs font-semibold text-highlighted leading-snug line-clamp-2">
+                {{ ord.item }} ({{ ord.variant }})
+              </p>
+
+              <div class="flex items-center gap-2 pt-1 border-t border-default/50">
+                <UAvatar :src="ord.customer.avatar" :alt="ord.customer.name" size="xs" />
+                <div class="text-[11px] min-w-0 flex-1">
+                  <p class="font-medium text-highlighted truncate">{{ ord.customer.name }}</p>
+                  <p class="text-dimmed truncate">{{ ord.customer.handle }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty Dropzone -->
+            <div
+              v-if="col.orders.length === 0"
+              class="h-28 border-2 border-dashed border-default/60 rounded-lg flex items-center justify-center text-xs text-muted"
+            >
+              Drop orders here
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Order Management Slideover -->
