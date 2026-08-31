@@ -447,12 +447,25 @@ function getBadgeColor(status: Order['status']) {
         <div v-if="selectedOrder" class="space-y-6">
           <!-- Buyer Info -->
           <div class="p-4 rounded-xl bg-elevated/40 border border-default space-y-2">
-            <div class="flex items-center gap-3">
-              <UAvatar :src="selectedOrder.customer.avatar" :alt="selectedOrder.customer.name" size="lg" />
-              <div>
-                <h4 class="font-bold text-highlighted text-base">{{ selectedOrder.customer.name }}</h4>
-                <p class="text-xs text-dimmed">{{ selectedOrder.customer.handle }}</p>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <UAvatar :src="selectedOrder.customer.avatar" :alt="selectedOrder.customer.name" size="lg" />
+                <div>
+                  <h4 class="font-bold text-highlighted text-base">{{ selectedOrder.customer.name }}</h4>
+                  <p class="text-xs text-dimmed">{{ selectedOrder.customer.handle }}</p>
+                </div>
               </div>
+              
+              <UButton
+                :to="`https://instagram.com/direct/t/${selectedOrder.customer.handle.replace('@', '')}`"
+                target="_blank"
+                label="DM on Instagram"
+                icon="i-simple-icons-instagram"
+                color="neutral"
+                variant="outline"
+                size="xs"
+                class="font-medium cursor-pointer shrink-0"
+              />
             </div>
             <div v-if="selectedOrder.customer.phone" class="pt-2 border-t border-default/60 text-xs space-y-1">
               <p><span class="text-muted">Phone:</span> <span class="text-highlighted font-medium">{{ selectedOrder.customer.phone }}</span></p>

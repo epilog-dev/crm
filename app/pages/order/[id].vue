@@ -21,6 +21,8 @@ const mockOrders = ref<Record<string, any>>({
     status: 'Confirmed', // Confirmed, Awaiting Payment, Paid, Shipped, Delivered, Cancelled
     paymentStatus: 'Pending', // Pending, Paid
     confirmedByCustomer: false,
+    paymentMethod: 'pay_now',
+    receiptUploaded: false,
     createdAt: 'Today, 2:30 PM'
   },
   'ORD-1079': {
@@ -39,6 +41,8 @@ const mockOrders = ref<Record<string, any>>({
     status: 'Awaiting Payment',
     paymentStatus: 'Pending',
     confirmedByCustomer: true,
+    paymentMethod: 'cod',
+    receiptUploaded: false,
     createdAt: 'Yesterday'
   }
 })
@@ -49,7 +53,6 @@ const order = computed(() => {
   if (mockOrders.value[orderId.value]) {
     return mockOrders.value[orderId.value]
   }
-  // Default fallback order if id not found
   return {
     id: orderId.value,
     customer: {
@@ -66,6 +69,8 @@ const order = computed(() => {
     status: 'Confirmed',
     paymentStatus: 'Pending',
     confirmedByCustomer: false,
+    paymentMethod: 'pay_now',
+    receiptUploaded: false,
     createdAt: 'Just now'
   }
 })
@@ -74,21 +79,41 @@ const formData = ref({
   name: order.value.customer.name || '',
   phone: order.value.customer.phone || '',
   address: order.value.customer.address || '',
-  pincode: order.value.customer.pincode || ''
+  pincode: order.value.customer.pincode || '',
+  paymentMethod: 'pay_now' as 'pay_now' | 'cod',
+  receiptFile: null as File | null,
+  receiptFileName: ''
 })
 
 const isSubmitting = ref(false)
 const isSubmitted = ref(order.value.confirmedByCustomer)
 
+function handleFileSelect(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files[0]) {
+    formData.value.receiptFile = input.files[0]
+    formData.value.receiptFileName = input.files[0].name
+  }
+}
+
 function handleConfirmOrder() {
   if (!formData.value.name || !formData.value.phone || !formData.value.address || !formData.value.pincode) return
   
+  if (formData.value.paymentMethod === 'pay_now' && !formData.value.receiptFileName) {
+    alert('Please upload your payment screenshot/receipt before confirming.')
+    return
+  }
+
   isSubmitting.value = true
   setTimeout(() => {
     order.value.customer.name = formData.value.name
     order.value.customer.phone = formData.value.phone
     order.value.customer.address = formData.value.address
     order.value.customer.pincode = formData.value.pincode
+    order.value.paymentMethod = formData.value.paymentMethod
+    order.value.receiptUploaded = !!formData.value.receiptFileName
+    
+    // Status updates: Pay Now uploaded receipt moves to 'Awaiting Payment' (pending seller check), COD moves to 'Confirmed/Awaiting Payment'
     order.value.status = 'Awaiting Payment'
     order.value.confirmedByCustomer = true
     isSubmitted.value = true
@@ -104,7 +129,7 @@ function getStepIndex(status: string) {
 
 useSeoMeta({
   title: `Order #${orderId.value} - Confirm Details`,
-  description: 'Customer order confirmation and delivery tracking page'
+  description: 'Customer order confirmation, payment QR, and delivery tracking page'
 })
 </script>
 
@@ -139,7 +164,7 @@ useSeoMeta({
         </div>
       </div>
 
-      <!-- Order Status Progress bar (if already confirmed or just confirmed) -->
+      <!-- Order Status Progress bar (if already confirmed) -->
       <div v-if="isSubmitted" class="bg-background rounded-2xl border border-default p-5 shadow-xs space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-sm text-highlighted">Order Status</h3>
@@ -173,7 +198,8 @@ useSeoMeta({
                 {{ step }}
               </span>
               <p v-if="step === 'Awaiting Payment' && order.status === 'Awaiting Payment'" class="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
-                Pay seller via UPI / Bank transfer / COD as agreed in DM.
+                <span v-if="order.paymentMethod === 'pay_now'">Receipt uploaded! Seller will verify payment shortly.</span>
+                <span v-else>Pay Cash on Delivery (COD) when package arrives.</span>
               </p>
               <p v-if="step === 'Paid' && order.paymentStatus === 'Paid'" class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
                 Payment verified by seller.
@@ -183,20 +209,21 @@ useSeoMeta({
         </div>
 
         <div class="pt-3 border-t border-default space-y-1 text-xs">
-          <p class="font-semibold text-highlighted">Shipping Address:</p>
+          <p class="font-semibold text-highlighted">Delivery Information:</p>
           <p class="text-dimmed">{{ formData.name }} • {{ formData.phone }}</p>
           <p class="text-dimmed">{{ formData.address }}, {{ formData.pincode }}</p>
+          <p class="text-muted mt-1">Payment Choice: <strong class="text-highlighted uppercase">{{ order.paymentMethod === 'pay_now' ? 'UPI / QR Paid' : 'Cash on Delivery (COD)' }}</strong></p>
         </div>
       </div>
 
-      <!-- Customer Details Form (if not confirmed yet) -->
-      <div v-else class="bg-background rounded-2xl border border-default p-5 shadow-xs space-y-4">
+      <!-- Customer Details & Payment Options Form (if not confirmed yet) -->
+      <div v-else class="bg-background rounded-2xl border border-default p-5 shadow-xs space-y-5">
         <div>
-          <h3 class="font-bold text-sm text-highlighted">Enter Shipping Information</h3>
-          <p class="text-xs text-dimmed">Please fill in your delivery details to confirm this order with the seller.</p>
+          <h3 class="font-bold text-sm text-highlighted">Delivery & Payment Details</h3>
+          <p class="text-xs text-dimmed">Fill in your shipping details and select your payment method.</p>
         </div>
 
-        <form @submit.prevent="handleConfirmOrder" class="space-y-3">
+        <form @submit.prevent="handleConfirmOrder" class="space-y-4">
           <div>
             <label class="block text-xs font-semibold text-highlighted mb-1">Full Name</label>
             <UInput v-model="formData.name" placeholder="e.g. Maria Santos" required size="md" class="w-full" />
@@ -217,9 +244,77 @@ useSeoMeta({
             <UInput v-model="formData.pincode" placeholder="e.g. 560001" required size="md" class="w-full" />
           </div>
 
+          <!-- PAYMENT METHOD SELECTOR -->
+          <div class="space-y-2 pt-2 border-t border-default">
+            <label class="block text-xs font-bold text-highlighted">Select Payment Method</label>
+
+            <div class="grid grid-cols-2 gap-3">
+              <!-- Pay Now (UPI / QR) -->
+              <div
+                @click="formData.paymentMethod = 'pay_now'"
+                :class="[
+                  'p-3 rounded-xl border cursor-pointer transition-all flex flex-col items-center justify-center text-center space-y-1',
+                  formData.paymentMethod === 'pay_now'
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                    : 'border-default bg-elevated/20 hover:border-highlighted/30'
+                ]"
+              >
+                <UIcon name="i-lucide-qr-code" class="size-6 text-primary" />
+                <span class="text-xs font-bold text-highlighted">Pay Now</span>
+                <span class="text-[10px] text-dimmed">UPI / Scan QR</span>
+              </div>
+
+              <!-- Cash on Delivery (COD) -->
+              <div
+                @click="formData.paymentMethod = 'cod'"
+                :class="[
+                  'p-3 rounded-xl border cursor-pointer transition-all flex flex-col items-center justify-center text-center space-y-1',
+                  formData.paymentMethod === 'cod'
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                    : 'border-default bg-elevated/20 hover:border-highlighted/30'
+                ]"
+              >
+                <UIcon name="i-lucide-banknote" class="size-6 text-emerald-500" />
+                <span class="text-xs font-bold text-highlighted">Cash on Delivery</span>
+                <span class="text-[10px] text-dimmed">Pay when delivered</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PAY NOW CONDITIONAL CONTENT: QR Code & Receipt Upload -->
+          <div v-if="formData.paymentMethod === 'pay_now'" class="p-4 rounded-xl bg-elevated/40 border border-default space-y-3">
+            <div class="text-center space-y-2">
+              <span class="text-xs font-bold text-highlighted">Scan QR to pay {{ order.currency }}{{ order.price.toLocaleString('en-IN') }}</span>
+              <!-- Mock UPI QR Code SVG -->
+              <div class="size-36 mx-auto bg-white p-2 rounded-xl border border-default flex items-center justify-center shadow-xs">
+                <svg viewBox="0 0 100 100" class="w-full h-full text-black">
+                  <path fill="currentColor" d="M0 0h30v30H0zM40 0h10v10H40zM60 0h10v10H60zM70 0h30v30H70zM10 10h10v10H10zM80 10h10v10H80zM0 40h10v10H0zM20 40h20v10H20zM50 40h10v10H50zM70 40h20v10H70zM0 60h10v10H0zM30 60h10v10H30zM50 60h20v10H50zM80 60h20v10H80zM0 70h30v30H0zM40 70h20v10H40zM70 70h30v30H70zM10 80h10v10H10zM80 80h10v10H80z" />
+                </svg>
+              </div>
+              <p class="text-[11px] text-dimmed font-mono">UPI ID: retrothrift@upi</p>
+            </div>
+
+            <!-- Receipt File Upload -->
+            <div class="space-y-1.5 pt-2 border-t border-default/60">
+              <label class="block text-xs font-semibold text-highlighted">Upload Payment Receipt / Screenshot *</label>
+              <div class="flex items-center justify-center w-full">
+                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-default rounded-xl cursor-pointer bg-background hover:bg-elevated/30 transition-colors">
+                  <div class="flex flex-col items-center justify-center pt-2 pb-3">
+                    <UIcon name="i-lucide-upload-cloud" class="size-6 text-dimmed mb-1" />
+                    <p class="text-xs text-dimmed font-medium">
+                      {{ formData.receiptFileName || 'Click to upload payment screenshot' }}
+                    </p>
+                    <p v-if="!formData.receiptFileName" class="text-[10px] text-muted">PNG, JPG or WebP up to 5MB</p>
+                  </div>
+                  <input type="file" accept="image/*" class="hidden" @change="handleFileSelect" />
+                </label>
+              </div>
+            </div>
+          </div>
+
           <UButton
             type="submit"
-            label="Confirm Order & Request Delivery"
+            :label="formData.paymentMethod === 'pay_now' ? 'Upload Receipt & Confirm Order' : 'Confirm Cash on Delivery Order'"
             color="primary"
             size="lg"
             block
@@ -231,7 +326,7 @@ useSeoMeta({
 
       <div class="text-center text-[11px] text-muted space-y-1">
         <p>⚡ Powered by DM Sales Workspace</p>
-        <p>Payments are handled directly with the Instagram seller. Our app does not process money directly.</p>
+        <p>Direct seller fulfillment. No payment gateway fees charged.</p>
       </div>
 
     </div>

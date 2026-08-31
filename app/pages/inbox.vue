@@ -6,8 +6,28 @@ useSeoMeta({
   description: "Unified Instagram DM sales inbox. Turn DMs into orders in 1 click.",
 });
 
-// Mock conversations data
-const conversations = ref([
+interface ChatMessage {
+  id: number
+  text: string
+  sender: 'them' | 'me'
+  time: string
+}
+
+interface Conversation {
+  id: number
+  name: string
+  handle: string
+  avatar: string
+  platform: string
+  lastMessage: string
+  time: string
+  unreadCount: number
+  orderIds: string[] // Array of orders linked to this conversation
+  messages: ChatMessage[]
+}
+
+// Mock conversations data with multiple order support
+const conversations = ref<Conversation[]>([
   {
     id: 1,
     name: "Maria Santos",
@@ -17,7 +37,7 @@ const conversations = ref([
     lastMessage: "I'll take it.",
     time: "10:24 AM",
     unreadCount: 1,
-    orderId: "ORD-1082",
+    orderIds: ["ORD-1082"],
     messages: [
       { id: 1, text: "Hi! How much for the Nike Vintage Windbreaker Jacket?", sender: "them", time: "10:20 AM" },
       { id: 2, text: "Hey @maria! It's ₹1,500 for size M. Excellent condition!", sender: "me", time: "10:22 AM" },
@@ -33,7 +53,7 @@ const conversations = ref([
     lastMessage: "Is the leather jacket still available?",
     time: "Yesterday",
     unreadCount: 0,
-    orderId: null,
+    orderIds: [],
     messages: [
       { id: 1, text: "Is the leather jacket still available?", sender: "them", time: "Yesterday, 3:15 PM" },
     ]
@@ -47,7 +67,7 @@ const conversations = ref([
     lastMessage: "Order link confirmed! Sent shipping address.",
     time: "2 days ago",
     unreadCount: 0,
-    orderId: "ORD-1079",
+    orderIds: ["ORD-1079", "ORD-1042"],
     messages: [
       { id: 1, text: "I'll take the Silk Slip Dress (Emerald) in S!", sender: "them", time: "Aug 23, 11:00 AM" },
       { id: 2, text: "Awesome! Here is your order link: https://crm.app/order/ORD-1079", sender: "me", time: "Aug 23, 11:05 AM" },
@@ -93,31 +113,23 @@ const selectChat = (id: number) => {
 
 // Open Create Order Modal
 const openCreateOrderModal = () => {
-  if (activeChat.value?.name === 'Maria Santos') {
-    orderForm.value = {
-      item: 'Nike Vintage Windbreaker Jacket',
-      variant: 'M',
-      price: 1500
-    };
-  } else {
-    orderForm.value = {
-      item: '',
-      variant: '',
-      price: 0
-    };
-  }
+  orderForm.value = {
+    item: '',
+    variant: '',
+    price: 0
+  };
   isOrderModalOpen.value = true;
 };
 
-// Create Order Handler
+// Create Order Handler (Supports repeat orders for the same customer)
 const handleCreateOrder = () => {
   if (!activeChat.value) return;
 
   const newOrderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-  activeChat.value.orderId = newOrderId;
+  activeChat.value.orderIds.unshift(newOrderId); // Add to customer's order history array
 
   const link = `${window.location.origin}/order/${newOrderId}`;
-  const orderMessageText = `📦 Order created!\nItem: ${orderForm.value.item}\nVariant: ${orderForm.value.variant}\nPrice: ₹${orderForm.value.price.toLocaleString('en-IN')}\n\nPlease click your unique order link to enter your shipping details and confirm:\n${link}`;
+  const orderMessageText = `📦 Order created (#${newOrderId})!\nItem: ${orderForm.value.item}\nVariant: ${orderForm.value.variant}\nPrice: ₹${orderForm.value.price.toLocaleString('en-IN')}\n\nPlease click your unique order link to enter your shipping details and confirm:\n${link}`;
 
   activeChat.value.messages.push({
     id: activeChat.value.messages.length + 1,
@@ -205,9 +217,16 @@ const sendMessage = () => {
               </div>
               <div class="flex items-center justify-between gap-1">
                 <p class="text-xs text-dimmed truncate flex-1">{{ chat.lastMessage }}</p>
-                <UBadge v-if="chat.orderId" color="success" variant="subtle" size="xs">
-                  {{ chat.orderId }}
-                </UBadge>
+
+                <!-- Order Badges: Displays active order badge or count of repeat orders -->
+                <div v-if="chat.orderIds.length > 0" class="flex items-center gap-1">
+                  <UBadge color="success" variant="subtle" size="xs">
+                    {{ chat.orderIds[0] }}
+                  </UBadge>
+                  <UBadge v-if="chat.orderIds.length > 1" color="neutral" variant="subtle" size="xs" title="Repeat Customer">
+                    +{{ chat.orderIds.length - 1 }}
+                  </UBadge>
+                </div>
               </div>
             </div>
           </div>
@@ -244,9 +263,25 @@ const sendMessage = () => {
             </div>
 
             <div class="flex items-center gap-2">
-              <UBadge v-if="activeChat.orderId" color="primary" variant="subtle" class="hidden sm:inline-flex">
-                Order {{ activeChat.orderId }} Linked
-              </UBadge>
+              <!-- Linked Orders Badge list for repeat buyer -->
+              <div v-if="activeChat.orderIds.length > 0" class="hidden sm:flex items-center gap-1">
+                <UBadge v-for="id in activeChat.orderIds" :key="id" color="primary" variant="subtle">
+                  {{ id }}
+                </UBadge>
+              </div>
+
+              <!-- Open in Instagram App/Web direct action -->
+              <UButton
+                :to="`https://instagram.com/direct/t/${activeChat.handle.replace('@', '')}`"
+                target="_blank"
+                label="Message on Instagram"
+                icon="i-simple-icons-instagram"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                class="font-medium cursor-pointer"
+              />
+
               <UButton
                 label="+ Create Order"
                 color="primary"
@@ -309,29 +344,34 @@ const sendMessage = () => {
       <template #body>
         <form @submit.prevent="handleCreateOrder" class="space-y-4">
           <div class="p-3 bg-elevated/40 rounded-lg border border-default space-y-1">
-            <span class="text-xs text-muted">Customer (Auto-attached)</span>
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-muted">Customer (Auto-attached)</span>
+              <span v-if="activeChat && activeChat.orderIds.length > 0" class="text-[11px] font-bold text-emerald-500">
+                Repeat Buyer ({{ activeChat.orderIds.length }} previous orders)
+              </span>
+            </div>
             <p class="text-sm font-bold text-highlighted">{{ activeChat?.name }} ({{ activeChat?.handle }})</p>
           </div>
 
           <div>
             <label class="block text-xs font-semibold text-highlighted mb-1">Item Name</label>
-            <UInput v-model="orderForm.item" placeholder="e.g. Nike Jacket" required class="w-full" />
+            <UInput v-model="orderForm.item" placeholder="e.g. Vintage Denim Shirt" required class="w-full" />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-highlighted mb-1">Variant (Size/Color)</label>
-              <UInput v-model="orderForm.variant" placeholder="e.g. M / Black" required class="w-full" />
+              <UInput v-model="orderForm.variant" placeholder="e.g. L / Blue" required class="w-full" />
             </div>
             <div>
               <label class="block text-xs font-semibold text-highlighted mb-1">Price (₹)</label>
-              <UInput v-model.number="orderForm.price" type="number" placeholder="1500" required class="w-full" />
+              <UInput v-model.number="orderForm.price" type="number" placeholder="1800" required class="w-full" />
             </div>
           </div>
 
           <div class="pt-2 flex justify-end gap-2">
             <UButton label="Cancel" color="neutral" variant="ghost" @click="isOrderModalOpen = false" />
-            <UButton type="submit" label="Generate & Send Order Link" color="primary" class="font-bold cursor-pointer" />
+            <UButton type="submit" label="Generate & Send New Order Link" color="primary" class="font-bold cursor-pointer" />
           </div>
         </form>
       </template>
