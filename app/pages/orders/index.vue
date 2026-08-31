@@ -132,6 +132,11 @@ const search = ref('')
 const selectedStatusFilter = ref('All')
 const selectedOrder = ref<Order | null>(null)
 const isSlideoverOpen = ref(false)
+const isPrintModalOpen = ref(false)
+
+function triggerSlipPrint() {
+  window.print()
+}
 
 const statusOptions = ['All', 'Confirmed', 'Awaiting Payment', 'Paid', 'Shipped', 'Delivered', 'Cancelled']
 
@@ -526,6 +531,19 @@ function getBadgeColor(status: Order['status']) {
             </div>
           </div>
 
+          <!-- Print Shipping Slip Action -->
+          <div class="pt-2">
+            <UButton
+              label="Print / Download Shipping Slip"
+              icon="i-lucide-printer"
+              color="neutral"
+              variant="outline"
+              block
+              class="font-bold cursor-pointer"
+              @click="isPrintModalOpen = true"
+            />
+          </div>
+
           <!-- Customer Order Link -->
           <div class="p-3 bg-elevated/30 rounded-lg border border-default text-xs space-y-1">
             <span class="text-muted">Unique Customer Order Link:</span>
@@ -539,5 +557,56 @@ function getBadgeColor(status: Order['status']) {
         </div>
       </template>
     </USlideover>
+
+    <!-- Modal for 1-Tap Printing Shipping Slip -->
+    <UModal v-model:open="isPrintModalOpen" title="Print Shipping Slip" description="Standard 4x6 inch shipping label for courier polybag">
+      <template #body>
+        <div v-if="selectedOrder" class="space-y-4">
+          <div class="bg-white text-black p-5 rounded-xl border-2 border-dashed border-black shadow-xs space-y-4 font-sans print-area">
+            <!-- Header -->
+            <div class="flex justify-between items-start border-b-2 border-black pb-3">
+              <div>
+                <h3 class="font-extrabold text-base tracking-tight">RETRO THRIFT STORE</h3>
+                <p class="text-[11px] text-zinc-600">Instagram Sales DM Order</p>
+              </div>
+              <div class="text-right">
+                <span class="font-mono font-extrabold text-sm border-2 border-black px-2 py-0.5 rounded">
+                  {{ selectedOrder.id }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Deliver To -->
+            <div class="space-y-1 text-left">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">DELIVER TO:</span>
+              <p class="font-extrabold text-base leading-snug">{{ selectedOrder.customer.name }}</p>
+              <p class="text-xs font-semibold text-pink-600">{{ selectedOrder.customer.handle }} • {{ selectedOrder.customer.phone || 'Phone pending' }}</p>
+              <p class="text-xs leading-normal font-medium mt-1">
+                {{ selectedOrder.customer.address || 'Address pending customer confirmation' }}<br />
+                Pincode: <strong class="text-sm font-extrabold text-black">{{ selectedOrder.customer.pincode || '-----' }}</strong>
+              </p>
+            </div>
+
+            <!-- Summary -->
+            <div class="border-t-2 border-black pt-3 space-y-2 text-left">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-bold truncate max-w-[200px]">{{ selectedOrder.item }} ({{ selectedOrder.variant }})</span>
+                <span class="font-mono font-bold">{{ selectedOrder.currency }}{{ selectedOrder.price.toLocaleString('en-IN') }}</span>
+              </div>
+              <div class="flex justify-between items-center text-[11px] pt-1">
+                <span class="px-2 py-0.5 rounded bg-zinc-100 font-bold border border-zinc-300">
+                  Payment: {{ selectedOrder.paymentStatus === 'Paid' ? 'Prepaid (UPI)' : 'COD / Pending' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <UButton label="Close" color="neutral" variant="ghost" @click="isPrintModalOpen = false" />
+            <UButton label="Print Label" icon="i-lucide-printer" color="primary" class="font-bold cursor-pointer" @click="triggerSlipPrint" />
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

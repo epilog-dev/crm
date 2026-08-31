@@ -17,13 +17,13 @@ export function useNavigation() {
       description: 'Overview of sales metrics, active DMs, and recent orders'
     },
     {
-      label: 'Sales DM Inbox',
+      label: 'Inbox',
       icon: 'i-lucide-inbox',
       to: '/inbox',
       description: 'Instagram DM Sales Inbox & Order creation'
     },
     {
-      label: 'Orders Workspace',
+      label: 'Orders',
       icon: 'i-lucide-shopping-bag',
       to: '/orders',
       description: 'Manage sales pipeline and track order fulfillments'
@@ -35,7 +35,7 @@ export function useNavigation() {
       description: 'View buyer handles, shipping details, and order history'
     },
     {
-      label: 'Instagram Connection',
+      label: 'Connect Instagram',
       icon: 'i-simple-icons-instagram',
       to: '/settings',
       description: 'Connect your Instagram Professional Account'

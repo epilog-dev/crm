@@ -316,12 +316,45 @@ const sendMessage = () => {
             </div>
           </div>
 
-          <!-- DM Input Form -->
-          <div class="p-4 border-t border-default bg-background">
+          <!-- DM Input Form with Quick Snippets Bar -->
+          <div class="p-3 border-t border-default bg-background space-y-2">
+            <!-- Quick Canned Snippets Chips -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+              <span class="text-[11px] font-semibold text-muted shrink-0 mr-1">Quick Reply:</span>
+              <button
+                type="button"
+                @click="replyText = 'Hi there! Yes, this item is currently in stock. Would you like me to reserve it for you?'"
+                class="px-2.5 py-1 rounded-full bg-elevated/40 border border-default hover:border-primary/50 text-dimmed hover:text-highlighted whitespace-nowrap transition-all cursor-pointer"
+              >
+                📦 In Stock?
+              </button>
+              <button
+                type="button"
+                @click="replyText = 'Standard delivery takes 3-5 business days via express courier across India.'"
+                class="px-2.5 py-1 rounded-full bg-elevated/40 border border-default hover:border-primary/50 text-dimmed hover:text-highlighted whitespace-nowrap transition-all cursor-pointer"
+              >
+                🚚 Delivery Time
+              </button>
+              <button
+                type="button"
+                @click="replyText = 'You can pay via UPI QR code or Cash on Delivery (COD) when confirming your order link.'"
+                class="px-2.5 py-1 rounded-full bg-elevated/40 border border-default hover:border-primary/50 text-dimmed hover:text-highlighted whitespace-nowrap transition-all cursor-pointer"
+              >
+                💳 Payment Info
+              </button>
+              <button
+                type="button"
+                @click="openCreateOrderModal()"
+                class="px-2.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-600 dark:text-pink-400 font-semibold whitespace-nowrap transition-all cursor-pointer hover:bg-pink-500/20"
+              >
+                ⚡ Create Order Link
+              </button>
+            </div>
+
             <form @submit.prevent="sendMessage" class="flex gap-2 items-center">
               <UInput
                 v-model="replyText"
-                placeholder="Reply to Instagram DM..."
+                placeholder="Type reply or pick a quick snippet above..."
                 size="md"
                 class="flex-1"
               />

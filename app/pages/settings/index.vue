@@ -30,8 +30,8 @@ function handleDisconnect() {
 </script>
 
 <template>
-  <div class="p-6 max-w-4xl space-y-6">
-    <div>
+  <div class="p-6 max-w-4xl mx-auto w-full space-y-6">
+    <div class="text-center sm:text-left">
       <h2 class="text-xl font-bold text-highlighted">Instagram Professional Account Integration</h2>
       <p class="text-sm text-dimmed">Connect your Instagram account through Meta's Official Instagram API to receive DMs and send order links.</p>
     </div>
