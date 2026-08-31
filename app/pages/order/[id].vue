@@ -88,6 +88,9 @@ const formData = ref({
 const isSubmitting = ref(false)
 const isSubmitted = ref(order.value.confirmedByCustomer)
 
+// Seller Settings (can be toggled in /settings)
+const allowCod = ref(false) // Toggleable state: false forces Prepaid UPI, true enables COD option
+
 function handleFileSelect(event: Event) {
   const input = event.target as HTMLInputElement
   if (input.files && input.files[0]) {
@@ -246,9 +249,14 @@ useSeoMeta({
 
           <!-- PAYMENT METHOD SELECTOR -->
           <div class="space-y-2 pt-2 border-t border-default">
-            <label class="block text-xs font-bold text-highlighted">Select Payment Method</label>
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-bold text-highlighted">Select Payment Method</label>
+              <span v-if="!allowCod" class="text-[10px] font-semibold text-amber-500">
+                COD Disabled by Seller (Prepaid Only)
+              </span>
+            </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div :class="['grid gap-3', allowCod ? 'grid-cols-2' : 'grid-cols-1']">
               <!-- Pay Now (UPI / QR) -->
               <div
                 @click="formData.paymentMethod = 'pay_now'"
@@ -264,8 +272,9 @@ useSeoMeta({
                 <span class="text-[10px] text-dimmed">UPI / Scan QR</span>
               </div>
 
-              <!-- Cash on Delivery (COD) -->
+              <!-- Cash on Delivery (COD) - Conditionally rendered based on Seller Settings -->
               <div
+                v-if="allowCod"
                 @click="formData.paymentMethod = 'cod'"
                 :class="[
                   'p-3 rounded-xl border cursor-pointer transition-all flex flex-col items-center justify-center text-center space-y-1',

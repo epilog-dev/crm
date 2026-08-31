@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useSeoMeta({
-  title: 'Instagram Account Connection - Sales Inbox',
-  description: 'Connect your Instagram Professional account via Meta API'
+  title: 'Store & Payment Settings - DM Sales Workspace',
+  description: 'Manage store UPI ID, enable/disable COD for order links, and Meta API integration.'
 })
 
 const isConnected = ref(true)
@@ -15,6 +15,14 @@ const accountInfo = ref({
 })
 
 const isConnecting = ref(false)
+
+// Seller Preferences (affecting customer order form & UPI)
+const sellerSettings = ref({
+  upiId: 'retrothrift@upi',
+  codEnabled: false, // Default: COD Disabled, forces Pay Now (UPI/QR)
+  requireReceiptUpload: true,
+  autoLinkDms: true
+})
 
 function handleConnect() {
   isConnecting.value = true
@@ -117,6 +125,110 @@ function handleDisconnect() {
         :loading="isConnecting"
         @click="handleConnect"
       />
+    </UCard>
+
+    <!-- Seller Payment UPI & Order Form Preferences Card -->
+    <UCard class="divide-y divide-default">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-qr-code" class="size-5 text-primary" />
+            <h3 class="font-semibold text-highlighted">Customer Order Form & Payment Settings</h3>
+          </div>
+          <UBadge color="primary" variant="subtle" size="xs">Live Form Sync</UBadge>
+        </div>
+      </template>
+
+      <div class="p-5 space-y-5 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-highlighted mb-1">Store UPI ID / VPA</label>
+            <UInput v-model="sellerSettings.upiId" placeholder="e.g. storename@upi" size="md" class="w-full" />
+            <p class="text-[11px] text-dimmed mt-1">Displayed on customer QR payment screen.</p>
+          </div>
+
+          <!-- Interactive COD Toggle -->
+          <div class="p-3 bg-elevated/30 rounded-xl border border-default space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="font-bold text-highlighted block">Cash on Delivery (COD)</span>
+                <p class="text-[11px] text-dimmed">Allow buyers to pick COD on order link.</p>
+              </div>
+              <button
+                type="button"
+                @click="sellerSettings.codEnabled = !sellerSettings.codEnabled"
+                :class="[
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                  sellerSettings.codEnabled ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
+                ]"
+              >
+                <span
+                  :class="[
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    sellerSettings.codEnabled ? 'translate-x-5' : 'translate-x-0'
+                  ]"
+                />
+              </button>
+            </div>
+            <div class="pt-1 flex items-center gap-1.5 text-[11px]">
+              <UBadge :color="sellerSettings.codEnabled ? 'success' : 'warning'" variant="subtle" size="xs">
+                {{ sellerSettings.codEnabled ? 'COD Active' : 'COD Disabled (UPI Only)' }}
+              </UBadge>
+              <span class="text-dimmed">
+                {{ sellerSettings.codEnabled ? 'Customers can choose COD or Pay Now' : 'Forces customer to Pay Now via UPI QR' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-default/60">
+          <!-- Mandatory Screenshot Toggle -->
+          <div class="flex items-center justify-between p-3 bg-elevated/20 rounded-xl border border-default">
+            <div>
+              <span class="font-semibold text-highlighted block">Require Payment Receipt Upload</span>
+              <p class="text-[11px] text-dimmed">Customer must upload screenshot before confirming.</p>
+            </div>
+            <button
+              type="button"
+              @click="sellerSettings.requireReceiptUpload = !sellerSettings.requireReceiptUpload"
+              :class="[
+                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                sellerSettings.requireReceiptUpload ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  sellerSettings.requireReceiptUpload ? 'translate-x-5' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
+
+          <!-- Auto Link DMs -->
+          <div class="flex items-center justify-between p-3 bg-elevated/20 rounded-xl border border-default">
+            <div>
+              <span class="font-semibold text-highlighted block">Auto-Link DM Messages</span>
+              <p class="text-[11px] text-dimmed">Auto-send order link directly inside Instagram chat.</p>
+            </div>
+            <button
+              type="button"
+              @click="sellerSettings.autoLinkDms = !sellerSettings.autoLinkDms"
+              :class="[
+                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                sellerSettings.autoLinkDms ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  sellerSettings.autoLinkDms ? 'translate-x-5' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
+        </div>
+      </div>
     </UCard>
 
     <!-- Scope Explainer -->

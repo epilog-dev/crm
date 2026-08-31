@@ -6,6 +6,45 @@ useSeoMeta({
   description: 'Overview of Instagram DM sales, conversion rate, pending payments, and recent orders.'
 })
 
+// Interactive Onboarding Checklist Steps
+const setupSteps = ref([
+  {
+    id: 1,
+    title: 'Connect Instagram Business Account',
+    description: 'Meta API linked for webhooks and DM sales workspace.',
+    completed: true,
+    link: '/settings',
+    linkText: 'Connected'
+  },
+  {
+    id: 2,
+    title: 'Receive Instagram DMs',
+    description: 'Incoming customer messages auto-synced to sales inbox.',
+    completed: true,
+    link: '/inbox',
+    linkText: 'View Inbox'
+  },
+  {
+    id: 3,
+    title: 'Create Order from Conversation',
+    description: 'Generate unique order link directly inside DM chat.',
+    completed: true,
+    link: '/inbox',
+    linkText: 'Create Order'
+  },
+  {
+    id: 4,
+    title: 'Verify Payment & Print Courier Label',
+    description: 'Check UPI screenshot / COD status and print shipping slip.',
+    completed: false,
+    link: '/orders',
+    linkText: 'Go to Orders'
+  }
+])
+
+const completedStepsCount = computed(() => setupSteps.value.filter(s => s.completed).length)
+const progressPercentage = computed(() => Math.round((completedStepsCount.value / setupSteps.value.length) * 100))
+
 // Metrics & Analytics
 const metrics = ref({
   totalSales: 48500,
@@ -125,6 +164,81 @@ const activeDmsList = ref([
           size="md"
           class="cursor-pointer"
         />
+      </div>
+    </div>
+
+    <!-- Seller Onboarding & Flow Progress Checklist -->
+    <div class="p-5 rounded-2xl border border-default bg-background space-y-4 shadow-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="font-bold text-base text-highlighted flex items-center gap-2">
+            <UIcon name="i-lucide-list-checks" class="size-5 text-primary" />
+            Seller Setup & Sales Flow Progress
+          </h3>
+          <p class="text-xs text-dimmed mt-0.5">Complete these core steps to start turning Instagram DMs into fulfilled sales.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="text-right">
+            <span class="text-xs font-bold text-highlighted">{{ completedStepsCount }} of {{ setupSteps.length }} Completed</span>
+            <p class="text-[10px] text-dimmed">{{ progressPercentage }}% Setup Progress</p>
+          </div>
+          <UBadge color="primary" variant="subtle" size="md" class="font-bold">
+            {{ progressPercentage }}%
+          </UBadge>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full bg-neutral-100 dark:bg-neutral-800 h-2 rounded-full overflow-hidden">
+        <div
+          class="bg-primary h-full transition-all duration-500 rounded-full"
+          :style="{ width: `${progressPercentage}%` }"
+        ></div>
+      </div>
+
+      <!-- Checklist Items Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+        <div
+          v-for="step in setupSteps"
+          :key="step.id"
+          :class="[
+            'p-3.5 rounded-xl border transition-all flex flex-col justify-between space-y-2',
+            step.completed
+              ? 'border-emerald-500/30 bg-emerald-500/5'
+              : 'border-primary/40 bg-primary/5 ring-1 ring-primary/20'
+          ]"
+        >
+          <div class="flex items-start gap-2.5">
+            <button
+              type="button"
+              @click="step.completed = !step.completed"
+              :class="[
+                'size-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all cursor-pointer text-xs font-bold',
+                step.completed ? 'bg-emerald-500 text-white' : 'border-2 border-primary text-transparent hover:border-primary/80'
+              ]"
+            >
+              ✓
+            </button>
+            <div class="space-y-0.5">
+              <h4 :class="['text-xs font-bold leading-tight', step.completed ? 'line-through text-dimmed' : 'text-highlighted']">
+                {{ step.id }}. {{ step.title }}
+              </h4>
+              <p class="text-[11px] text-dimmed leading-snug">{{ step.description }}</p>
+            </div>
+          </div>
+
+          <div class="pt-2 flex justify-between items-center border-t border-default/50 text-[11px]">
+            <span :class="step.completed ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-500 font-medium'">
+              {{ step.completed ? 'Step Completed' : 'Action Required' }}
+            </span>
+            <NuxtLink
+              :to="step.link"
+              class="text-primary font-bold hover:underline flex items-center gap-0.5"
+            >
+              {{ step.linkText }} →
+            </NuxtLink>
+          </div>
+        </div>
       </div>
     </div>
 
