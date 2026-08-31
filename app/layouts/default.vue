@@ -112,8 +112,8 @@ const customSearchGroups = [
 <template>
   <UDashboardGroup>
     <UDashboardSidebar collapsible :menu="{ ui: { content: 'max-w-xs' } }" :ui="{
-      root: 'bg-background border-r border-default',
-      content: 'bg-background dark:bg-neutral-900 border-r border-default'
+      root: 'bg-neutral-100/70 dark:bg-neutral-900/90 border-r border-default',
+      content: 'bg-neutral-100/70 dark:bg-neutral-900/90 border-r border-default'
     }" resizable>
       <template #header="{ collapsed }">
         <div class="flex items-center gap-2.5 font-semibold text-lg">

@@ -4,6 +4,8 @@ useSeoMeta({
   description: 'Manage store UPI ID, enable/disable COD for order links, and Meta API integration.'
 })
 
+const { sellerSettings } = useSellerSettings()
+
 const isConnected = ref(true)
 const accountInfo = ref({
   username: '@thrift_store_india',
@@ -15,14 +17,6 @@ const accountInfo = ref({
 })
 
 const isConnecting = ref(false)
-
-// Seller Preferences (affecting customer order form & UPI)
-const sellerSettings = ref({
-  upiId: 'retrothrift@upi',
-  codEnabled: false, // Default: COD Disabled, forces Pay Now (UPI/QR)
-  requireReceiptUpload: true,
-  autoLinkDms: true
-})
 
 function handleConnect() {
   isConnecting.value = true

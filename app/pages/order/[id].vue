@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
+definePageMeta({
+  layout: false
+})
+
 const route = useRoute()
 
 // Mock data store for orders
@@ -88,8 +92,9 @@ const formData = ref({
 const isSubmitting = ref(false)
 const isSubmitted = ref(order.value.confirmedByCustomer)
 
-// Seller Settings (can be toggled in /settings)
-const allowCod = ref(false) // Toggleable state: false forces Prepaid UPI, true enables COD option
+const { sellerSettings } = useSellerSettings()
+
+const allowCod = computed(() => sellerSettings.value.codEnabled)
 
 function handleFileSelect(event: Event) {
   const input = event.target as HTMLInputElement
