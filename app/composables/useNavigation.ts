@@ -20,12 +20,14 @@ export function useNavigation() {
       label: 'Inbox',
       icon: 'i-lucide-inbox',
       to: '/inbox',
+      badge: { label: '8', color: 'primary' },
       description: 'Instagram DM Sales Inbox & Order creation'
     },
     {
       label: 'Orders',
       icon: 'i-lucide-shopping-bag',
       to: '/orders',
+      badge: { label: '3', color: 'warning' },
       description: 'Manage sales pipeline and track order fulfillments'
     },
     {
@@ -38,6 +40,7 @@ export function useNavigation() {
       label: 'Connect Instagram',
       icon: 'i-simple-icons-instagram',
       to: '/settings',
+      badge: { label: '✓', color: 'success' },
       description: 'Connect your Instagram Professional Account'
     }
   ])
