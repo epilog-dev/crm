@@ -53,16 +53,16 @@ function handleDownload() {
 <template>
   <UDashboardGroup>
     <UDashboardSidebar collapsible :menu="{ ui: { content: 'max-w-xs' } }" :ui="{
-      root: 'bg-muted/50 dark:bg-elevated/30',
-      content: 'bg-muted/50 dark:bg-elevated/30'
+      root: 'bg-background border-r border-default',
+      content: 'bg-background dark:bg-neutral-900 border-r border-default'
     }" resizable>
       <template #header="{ collapsed }">
         <div class="flex items-center gap-2.5 font-semibold text-lg">
           <div
-            class="flex size-7 items-center justify-center rounded-lg bg-pink-500 text-white font-bold text-sm shrink-0">
-            S
+            class="flex size-7 items-center justify-center rounded-lg bg-primary text-white font-bold text-sm shrink-0">
+            D
           </div>
-          <span v-if="!collapsed" class="tracking-tight text-highlighted text-sm font-bold">DM Sales</span>
+          <span v-if="!collapsed" class="tracking-tight text-highlighted text-sm font-bold">Docket</span>
         </div>
       </template>
 
