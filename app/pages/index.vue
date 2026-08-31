@@ -48,6 +48,63 @@ const setupSteps = ref([
 const completedStepsCount = computed(() => setupSteps.value.filter(s => s.completed).length)
 const progressPercentage = computed(() => Math.round((completedStepsCount.value / setupSteps.value.length) * 100))
 
+// Seller Tiers (Based on completed order count)
+const sellerTiers = [
+  { name: 'Emerging Seller', minOrders: 0, badge: '🌱 Tier 1', color: 'neutral' },
+  { name: 'DM Pro', minOrders: 10, badge: '🥈 Tier 2', color: 'info' },
+  { name: 'Power Store', minOrders: 30, badge: '🥇 Tier 3', color: 'warning' },
+  { name: 'Instagram Elite', minOrders: 100, badge: '👑 Tier 4', color: 'success' }
+]
+
+const currentOrderCount = ref(32) // Mock completed orders
+const currentTier = computed(() => {
+  return [...sellerTiers].reverse().find(t => currentOrderCount.value >= t.minOrders) || sellerTiers[0]
+})
+
+// Unlockable Achievement Badges
+const achievements = ref([
+  {
+    id: 'first_order',
+    title: 'First DM Order',
+    description: 'Created & sent your first DM order link',
+    icon: 'i-lucide-party-popper',
+    unlocked: true,
+    unlockedAt: 'Aug 16'
+  },
+  {
+    id: 'dm_converter',
+    title: 'Fast Converter',
+    description: 'Achieved 40%+ DM to Order conversion',
+    icon: 'i-lucide-zap',
+    unlocked: true,
+    unlockedAt: 'Aug 24'
+  },
+  {
+    id: 'power_store',
+    title: 'Power Store',
+    description: 'Crossed 30+ confirmed sales',
+    icon: 'i-lucide-award',
+    unlocked: true,
+    unlockedAt: 'Aug 29'
+  },
+  {
+    id: 'century_club',
+    title: '100 DM Club',
+    description: 'Fulfill 100 Instagram DM orders',
+    icon: 'i-lucide-crown',
+    unlocked: false,
+    unlockedAt: 'Locked'
+  }
+])
+
+const isStoryModalOpen = ref(false)
+const selectedShareBadge = ref<any>(null)
+
+function openShareBadgeModal(badge: any) {
+  selectedShareBadge.value = badge
+  isStoryModalOpen.value = true
+}
+
 // Metrics & Analytics
 const metrics = ref({
   totalSales: 48500,
@@ -302,6 +359,83 @@ const activeDmsList = ref([
           </div>
         </div>
       </div>
+
+      <!-- SELLER TIER RANK & UNLOCKABLE ACHIEVEMENT BADGES -->
+      <div class="p-5 rounded-2xl border border-default bg-background space-y-4 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="size-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-extrabold text-xl shrink-0">
+              🏆
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-base text-highlighted">Seller Rank: {{ currentTier.name }}</h3>
+                <UBadge :color="currentTier.color" variant="subtle" size="xs" class="font-bold">
+                  {{ currentTier.badge }}
+                </UBadge>
+              </div>
+              <p class="text-xs text-dimmed mt-0.5">
+                Processed <strong>{{ currentOrderCount }} DM Orders</strong> • Next Rank: <strong>Instagram Elite</strong> at 100 Orders
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-dimmed">Level Progress:</span>
+            <div class="w-32 bg-neutral-100 dark:bg-neutral-800 h-2 rounded-full overflow-hidden">
+              <div class="bg-amber-500 h-full rounded-full" style="width: 32%"></div>
+            </div>
+            <span class="font-bold text-highlighted">32%</span>
+          </div>
+        </div>
+
+        <!-- Unlockable Badges Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-default/60">
+          <div
+            v-for="badge in achievements"
+            :key="badge.id"
+            :class="[
+              'p-3 rounded-xl border transition-all flex flex-col justify-between space-y-2 relative',
+              badge.unlocked
+                ? 'border-amber-500/40 bg-amber-500/5'
+                : 'border-default bg-elevated/10 opacity-60'
+            ]"
+          >
+            <div class="flex items-start gap-2.5">
+              <div
+                :class="[
+                  'size-8 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold',
+                  badge.unlocked ? 'bg-amber-500 text-white shadow-xs' : 'bg-neutral-200 dark:bg-neutral-800 text-dimmed'
+                ]"
+              >
+                <UIcon :name="badge.icon" class="size-4" />
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-xs font-bold text-highlighted leading-tight truncate flex items-center gap-1">
+                  {{ badge.title }}
+                  <span v-if="badge.unlocked" class="text-[10px] text-amber-500">✓</span>
+                </h4>
+                <p class="text-[11px] text-dimmed leading-snug mt-0.5">{{ badge.description }}</p>
+              </div>
+            </div>
+
+            <div class="pt-2 flex justify-between items-center border-t border-default/50 text-[10px]">
+              <span :class="badge.unlocked ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-dimmed'">
+                {{ badge.unlocked ? `Unlocked ${badge.unlockedAt}` : '🔒 Locked' }}
+              </span>
+
+              <button
+                v-if="badge.unlocked"
+                type="button"
+                @click="openShareBadgeModal(badge)"
+                class="text-primary font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                Share to IG Story 📲
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 4 KPI Metrics Grid -->
@@ -476,8 +610,53 @@ const activeDmsList = ref([
             DM → Customer says <em>"I'll take it"</em> → Seller clicks <strong>+ Create Order</strong> → Customer enters delivery info → Seller updates payment manually (`Pending` → `Paid`).
           </p>
         </div>
-        </div>
       </div>
-    </template>
+
+    </div>
+  </template>
+
+    <!-- SHAREABLE INSTAGRAM STORY BADGE MODAL -->
+    <UModal v-model:open="isStoryModalOpen" title="Share Milestone to Instagram Story">
+      <template #body>
+        <div v-if="selectedShareBadge" class="space-y-4 text-center p-2">
+          <!-- Graphic Preview Card designed for Instagram Story Screenshotting -->
+          <div class="p-6 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-600 to-indigo-700 text-white shadow-xl space-y-4 max-w-xs mx-auto border border-white/20">
+            <div class="size-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mx-auto text-2xl">
+              🏆
+            </div>
+
+            <div class="space-y-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
+                Verified Seller Milestone
+              </span>
+              <h3 class="text-xl font-extrabold tracking-tight mt-1">{{ selectedShareBadge.title }}</h3>
+              <p class="text-xs text-white/80">{{ selectedShareBadge.description }}</p>
+            </div>
+
+            <div class="pt-3 border-t border-white/20 flex items-center justify-between text-[11px] font-semibold text-white/90">
+              <span>@thrift_store_india</span>
+              <span class="bg-black/30 px-2 py-0.5 rounded">Plum Verified</span>
+            </div>
+          </div>
+
+          <p class="text-xs text-dimmed">
+            Screenshot or copy this graphic card to post on your store's Instagram Story to build trust with buyers!
+          </p>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton label="Close" color="neutral" variant="outline" @click="isStoryModalOpen = false" />
+          <UButton
+            label="Copy Story Graphic"
+            icon="i-lucide-copy"
+            color="primary"
+            class="font-bold cursor-pointer"
+            @click="isStoryModalOpen = false"
+          />
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

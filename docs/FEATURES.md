@@ -44,9 +44,16 @@
   - 1-Click `[ 📍 Maps Search ]` (opens Google Maps with buyer address & pincode).
 - **1-Tap Printable Shipping Slips**: Contextual modal generating 4x6 inch shipping labels formatted for polybags and thermal printers.
 
-### 5. Sales Dashboard & Focus Mode
+### 5. Sales Dashboard, Focus Mode & Seller Gamification
 - **Location**: [`app/pages/index.vue`](file:///Users/moonshiner/Workspace/dummy-projects/crm/app/pages/index.vue)
 - **✨ Focus Mode (ADHD-Friendly Minimalist View)**: Toggle switch that hides all metrics, charts, and clutter—replacing the dashboard with a clean 2-action launchpad (*1. Reply & Create Orders*, *2. Fulfill & Ship*).
+- **🏆 Seller Rank & Tiers**: Progress sellers through zero-cost ranks based on completed order milestones:
+  - 🌱 **Tier 1: Emerging Seller** (0–10 Orders)
+  - 🥈 **Tier 2: DM Pro** (10–30 Orders)
+  - 🥇 **Tier 3: Power Store** (30–100 Orders)
+  - 👑 **Tier 4: Instagram Elite** (100+ Orders)
+- **🏅 Unlockable Achievement Badges**: Earn milestone badges (*First DM Order*, *Fast Converter*, *Power Store*, *100 DM Club*).
+- **📲 Shareable Instagram Story Graphics Modal**: Sellers can click `[ Share to IG Story 📲 ]` on any unlocked badge to open a beautifully styled graphic card optimized for screenshotting & posting to their store's Instagram Story (driving viral word-of-mouth growth for Plum).
 - **Seller Setup Progress Checklist**: Interactive 4-step checklist with a dynamic percentage progress bar (`3 of 4 Completed - 75%`).
 - **KPI Metrics Grid**: Live tracking of Total Sales (₹), Pending Payments, Conversion Rate (DM → Order), and Active DM counters.
 
