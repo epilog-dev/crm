@@ -90,5 +90,17 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: error.message })
   }
 
+  await notify(client, {
+    storeId: order.store_id,
+    type: 'order',
+    title: 'New Order Confirmed',
+    message: `${name} confirmed delivery details for #${code} (${payment_method === 'cod' ? 'Cash on Delivery' : 'Prepaid'}).`,
+    link: '/orders',
+    icon: 'i-lucide-shopping-bag',
+    badgeColor: 'primary',
+    orderId: order.id,
+    conversationId: order.conversation_id ?? undefined
+  })
+
   return updated
 })

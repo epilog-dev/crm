@@ -32,6 +32,17 @@ export default defineEventHandler(async (event) => {
       sender: 'customer',
       body: body.message
     })
+
+    await notify(client, {
+      storeId: store.id,
+      type: 'dm',
+      title: 'New High-Intent DM',
+      message: `@${handle} sent a message: "${body.message}"`,
+      link: '/inbox',
+      icon: 'i-simple-icons-instagram',
+      badgeColor: 'info',
+      conversationId: conversation.id
+    })
   }
 
   return conversation

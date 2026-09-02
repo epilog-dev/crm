@@ -47,5 +47,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: updateErr.message })
   }
 
+  await notify(client, {
+    storeId: order.store_id,
+    type: 'payment',
+    title: 'Payment Screenshot Uploaded!',
+    message: `Customer uploaded a payment receipt for #${code}. Please verify.`,
+    link: '/orders',
+    icon: 'i-lucide-receipt',
+    badgeColor: 'success',
+    orderId: order.id
+  })
+
   return { success: true }
 })

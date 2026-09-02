@@ -22,6 +22,8 @@ export interface OrderViewModel {
   currency: string
   status: OrderStatus
   paymentStatus: PaymentStatus
+  paymentMethod: 'pay_now' | 'cod' | null
+  receiptUploaded: boolean
   createdAt: string
   orderLink: string
 }
@@ -46,6 +48,8 @@ function mapOrder(row: any): OrderViewModel {
     currency: item?.currency || row.currency || 'INR',
     status: row.status,
     paymentStatus: row.payment_status,
+    paymentMethod: row.payment_method ?? null,
+    receiptUploaded: !!row.receipt_uploaded,
     createdAt: row.created_at,
     orderLink: `/order/${row.order_code}`
   }
@@ -110,12 +114,18 @@ export function useOrders() {
     return mapped
   }
 
+  async function fetchReceiptUrl(id: string) {
+    const { url } = await $fetch<{ url: string }>(`/api/orders/${id}/receipt`)
+    return url
+  }
+
   return {
     orders,
     pending,
     fetchOrders,
     createOrder,
     updateOrderStatus,
-    updatePaymentStatus
+    updatePaymentStatus,
+    fetchReceiptUrl
   }
 }

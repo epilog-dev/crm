@@ -15,7 +15,8 @@ const {
   pending,
   fetchOrders,
   updateOrderStatus: updateOrderStatusApi,
-  updatePaymentStatus: updatePaymentStatusApi
+  updatePaymentStatus: updatePaymentStatusApi,
+  fetchReceiptUrl
 } = useOrders()
 
 onMounted(() => {
@@ -31,6 +32,23 @@ const isPrintModalOpen = ref(false)
 
 function triggerSlipPrint() {
   window.print()
+}
+
+const receiptUrl = ref<string | null>(null)
+const isReceiptModalOpen = ref(false)
+const isLoadingReceipt = ref(false)
+
+async function viewReceipt() {
+  if (!selectedOrder.value) return
+  isLoadingReceipt.value = true
+  try {
+    receiptUrl.value = await fetchReceiptUrl(selectedOrder.value.id)
+    isReceiptModalOpen.value = true
+  } catch (err) {
+    console.error('Failed to load payment receipt', err)
+  } finally {
+    isLoadingReceipt.value = false
+  }
 }
 
 const statusOptions = ['All', 'Confirmed', 'Awaiting Payment', 'Paid', 'Shipped', 'Delivered', 'Cancelled']
@@ -84,6 +102,7 @@ async function onDrop(targetStatus: Order['status']) {
 
 function openOrderDetails(order: Order) {
   selectedOrder.value = order
+  receiptUrl.value = null
   isSlideoverOpen.value = true
 }
 
@@ -452,6 +471,31 @@ function getBadgeColor(status: Order['status']) {
             />
           </div>
 
+          <!-- Payment Receipt Viewer -->
+          <div v-if="selectedOrder.receiptUploaded" class="p-4 rounded-xl border border-default space-y-3">
+            <div class="flex justify-between items-center">
+              <div>
+                <h5 class="text-xs font-bold text-highlighted">Payment Receipt</h5>
+                <p class="text-[11px] text-dimmed">Screenshot uploaded by customer</p>
+              </div>
+              <UBadge color="success" variant="subtle">Uploaded</UBadge>
+            </div>
+            <UButton
+              label="View Payment Receipt"
+              icon="i-lucide-receipt"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              block
+              class="font-bold cursor-pointer"
+              :loading="isLoadingReceipt"
+              @click="viewReceipt"
+            />
+          </div>
+          <div v-else-if="selectedOrder.paymentMethod === 'pay_now'" class="p-3 rounded-xl border border-dashed border-default text-center">
+            <p class="text-[11px] text-dimmed">Customer selected Pay Now but hasn't uploaded a receipt yet.</p>
+          </div>
+
           <!-- Order Status Lifecycle Selector (Feature #6) -->
           <div class="space-y-3">
             <h5 class="text-xs font-semibold uppercase tracking-wider text-muted">Update Order Status Flow</h5>
@@ -545,6 +589,35 @@ function getBadgeColor(status: Order['status']) {
           <div class="flex justify-end gap-2 pt-2">
             <UButton label="Close" color="neutral" variant="ghost" @click="isPrintModalOpen = false" />
             <UButton label="Print Label" icon="i-lucide-printer" color="primary" class="font-bold cursor-pointer" @click="triggerSlipPrint" />
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Payment Receipt Viewer Modal -->
+    <UModal
+      v-model:open="isReceiptModalOpen"
+      title="Payment Receipt"
+      :description="selectedOrder ? `${selectedOrder.orderCode} - ${selectedOrder.customer.handle}` : ''"
+    >
+      <template #body>
+        <div class="space-y-3">
+          <div v-if="receiptUrl" class="rounded-xl overflow-hidden border border-default bg-black/5 flex items-center justify-center">
+            <img :src="receiptUrl" alt="Payment receipt" class="max-h-[70vh] w-full object-contain" />
+          </div>
+          <div class="flex justify-end gap-2">
+            <UButton
+              v-if="receiptUrl"
+              :to="receiptUrl"
+              target="_blank"
+              label="Open in New Tab"
+              icon="i-lucide-external-link"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              class="cursor-pointer"
+            />
+            <UButton label="Close" color="neutral" variant="ghost" size="sm" class="cursor-pointer" @click="isReceiptModalOpen = false" />
           </div>
         </div>
       </template>

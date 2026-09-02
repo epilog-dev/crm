@@ -5,8 +5,10 @@ import type { Database } from '~/types/database.types'
 
 /**
  * Resolves the authenticated caller's store, auto-provisioning one on first
- * use (see `stores_after_insert_add_owner` trigger, which relies on this
- * running as the user's own client so `auth.uid()` resolves inside it).
+ * use via the `get_or_create_store` DB function. That function serializes
+ * concurrent calls with an advisory lock (keyed on auth.uid()) so parallel
+ * requests on first login -- e.g. the layout's store, orders, and
+ * notifications fetches firing at once -- can't each create their own store.
  */
 export async function requireStore(event: H3Event) {
   const client = await serverSupabaseClient<Database>(event)
@@ -16,33 +18,18 @@ export async function requireStore(event: H3Event) {
     throw createError({ statusCode: 401, message: 'Not authenticated' })
   }
 
-  const findMembership = () =>
-    client
-      .from('store_members')
-      .select('role, stores(*)')
-      .eq('user_id', user.sub)
-      .limit(1)
-      .maybeSingle()
+  const { data: store, error } = await client.rpc('get_or_create_store').single()
 
-  const { data: membership, error: membershipError } = await findMembership()
-  if (membershipError) {
-    throw createError({ statusCode: 500, message: membershipError.message })
+  if (error || !store) {
+    throw createError({ statusCode: 500, message: error?.message || 'Failed to resolve store' })
   }
 
-  if (membership?.stores) {
-    return { client: client as SupabaseClient<Database>, user, store: membership.stores, role: membership.role }
-  }
+  const { data: membership } = await client
+    .from('store_members')
+    .select('role')
+    .eq('store_id', store.id)
+    .eq('user_id', user.sub)
+    .maybeSingle()
 
-  const defaultName = user.email ? `${user.email.split('@')[0]}'s Store` : 'My Store'
-  const { error: createErr } = await client.from('stores').insert({ name: defaultName })
-  if (createErr) {
-    throw createError({ statusCode: 500, message: createErr.message })
-  }
-
-  const { data: created, error: refetchError } = await findMembership()
-  if (refetchError || !created?.stores) {
-    throw createError({ statusCode: 500, message: refetchError?.message || 'Failed to provision store' })
-  }
-
-  return { client: client as SupabaseClient<Database>, user, store: created.stores, role: created.role }
+  return { client: client as SupabaseClient<Database>, user, store, role: membership?.role ?? 'owner' }
 }

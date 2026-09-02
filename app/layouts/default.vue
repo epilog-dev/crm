@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import type { AppNotification } from '~/composables/useNotifications'
 
 const { user, navItems, userMenuItems } = useNavigation();
 
@@ -8,77 +9,44 @@ useSeoMeta({
   description: "Turn your Instagram DMs into organized orders.",
 });
 
-// Notifications Store for Instagram DM Sales activity
-interface Notification {
-  id: number
-  type: 'order' | 'payment' | 'dm' | 'system'
-  title: string
-  message: string
-  time: string
-  read: boolean
-  link?: string
-  badgeColor: 'primary' | 'success' | 'warning' | 'info'
-  icon: string
-}
+const { notifications, unreadCount, fetchNotifications, markRead, markAllRead, dismiss } = useNotifications()
 
-const notifications = ref<Notification[]>([
-  {
-    id: 1,
-    type: 'payment',
-    title: 'Payment Screenshot Uploaded!',
-    message: '@maria uploaded UPI payment receipt for order #ORD-1082 (₹1,500). Please verify.',
-    time: '5 mins ago',
-    read: false,
-    link: '/orders',
-    badgeColor: 'success',
-    icon: 'i-lucide-receipt'
-  },
-  {
-    id: 2,
-    type: 'order',
-    title: 'New Order Confirmed',
-    message: '@priya_s confirmed delivery address for #ORD-1079 (Silk Slip Dress).',
-    time: '25 mins ago',
-    read: false,
-    link: '/orders',
-    badgeColor: 'primary',
-    icon: 'i-lucide-shopping-bag'
-  },
-  {
-    id: 3,
-    type: 'dm',
-    title: 'New High-Intent DM',
-    message: '@rohan_g sent a message: "Is the leather jacket still available?"',
-    time: '1 hour ago',
-    read: false,
-    link: '/inbox',
-    badgeColor: 'info',
-    icon: 'i-simple-icons-instagram'
-  },
-  {
-    id: 4,
-    type: 'system',
-    title: 'Meta API Webhook Active',
-    message: 'Instagram Professional account @thrift_store_india is receiving DMs live.',
-    time: '3 hours ago',
-    read: true,
-    link: '/settings',
-    badgeColor: 'info',
-    icon: 'i-lucide-check-circle-2'
-  }
-])
+const POLL_INTERVAL_MS = 20000
+let pollTimer: ReturnType<typeof setInterval> | null = null
 
-const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
+onMounted(() => {
+  fetchNotifications()
+  pollTimer = setInterval(fetchNotifications, POLL_INTERVAL_MS)
+})
+
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer)
+})
 
 function markAllAsRead() {
-  notifications.value.forEach(n => n.read = true)
+  markAllRead()
+}
+
+function clearNotification(id: string) {
+  dismiss(id)
 }
 
 const isNotificationsOpen = ref(false)
 
-function handleNotificationClick(item: Notification) {
-  item.read = true
+function handleNotificationClick(item: AppNotification) {
+  markRead(item.id)
   isNotificationsOpen.value = false
+}
+
+function formatNotificationTime(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const minutes = Math.floor(diffMs / 60000)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+  const days = Math.floor(hours / 24)
+  return `${days} day${days === 1 ? '' : 's'} ago`
 }
 
 const customSearchGroups = [
@@ -204,7 +172,7 @@ const customSearchGroups = [
                         <h4 class="font-bold text-xs text-highlighted truncate">{{ item.title }}</h4>
                       </div>
                       <div class="flex items-center gap-1.5 shrink-0">
-                        <span class="text-[10px] text-dimmed">{{ item.time }}</span>
+                        <span class="text-[10px] text-dimmed">{{ formatNotificationTime(item.createdAt) }}</span>
                         <button
                           @click="clearNotification(item.id)"
                           class="text-dimmed hover:text-highlighted p-0.5 cursor-pointer"
