@@ -77,7 +77,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: itemErr.message })
   }
 
-  if (conversation_id) {
+  // "Auto-Link DM Messages" setting: only drop the order link straight into the
+  // DM thread when the seller has opted into that. When off, the order is still
+  // created and linked to the conversation -- the seller shares the link manually
+  // (e.g. via the inbox's "Copy Order Link" quick reply).
+  if (conversation_id && store.auto_link_dms) {
     const messageBody = `Order created (#${order.order_code})\nItem: ${item_name}${variant_label ? ` (${variant_label})` : ''}\nPrice: ${currency || 'INR'} ${price}\n\nOrder link: /order/${order.order_code}`
 
     await client.from('conversations').update({
@@ -94,5 +98,5 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return { ...order, customer: customerRow, order_items: [orderItem] }
+  return { ...order, customer: customerRow, order_items: [orderItem], autoLinked: !!(conversation_id && store.auto_link_dms) }
 })

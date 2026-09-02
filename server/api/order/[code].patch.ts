@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: order, error: findErr } = await client
     .from('orders')
-    .select('id, store_id, conversation_id, customer_id')
+    .select('id, store_id, conversation_id, customer_id, receipt_uploaded')
     .eq('order_code', code)
     .maybeSingle()
 
@@ -31,11 +31,21 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Order not found' })
   }
 
-  if (payment_method === 'cod') {
-    const { data: store } = await client.from('stores').select('cod_enabled').eq('id', order.store_id).single()
-    if (!store?.cod_enabled) {
-      throw createError({ statusCode: 400, message: 'Cash on Delivery is not enabled for this store' })
-    }
+  const { data: store, error: storeErr } = await client
+    .from('stores')
+    .select('cod_enabled, require_receipt_upload')
+    .eq('id', order.store_id)
+    .single()
+
+  if (storeErr || !store) {
+    throw createError({ statusCode: 500, message: storeErr?.message || 'Store not found' })
+  }
+
+  if (payment_method === 'cod' && !store.cod_enabled) {
+    throw createError({ statusCode: 400, message: 'Cash on Delivery is not enabled for this store' })
+  }
+  if (payment_method === 'pay_now' && store.require_receipt_upload && !order.receipt_uploaded) {
+    throw createError({ statusCode: 400, message: 'Please upload a payment receipt before confirming your order' })
   }
 
   // Resolve (or create) the customer record this order's shipping details belong to.

@@ -29,7 +29,7 @@ interface PublicOrder {
   receipt_uploaded: boolean
   created_at: string
   order_items: PublicOrderItem[]
-  store: { name: string, upi_vpa: string | null, cod_enabled: boolean }
+  store: { name: string, upi_vpa: string | null, cod_enabled: boolean, require_receipt_upload: boolean }
 }
 
 const route = useRoute()
@@ -60,6 +60,7 @@ onMounted(loadOrder)
 
 const item = computed(() => order.value?.order_items?.[0])
 const allowCod = computed(() => order.value?.store?.cod_enabled ?? false)
+const requireReceipt = computed(() => order.value?.store?.require_receipt_upload ?? true)
 const isSubmitted = computed(() => order.value?.confirmed_by_customer ?? false)
 
 const formData = ref({
@@ -86,7 +87,7 @@ function handleFileSelect(event: Event) {
 async function handleConfirmOrder() {
   if (!formData.value.name || !formData.value.phone || !formData.value.address || !formData.value.pincode) return
 
-  if (formData.value.paymentMethod === 'pay_now' && !formData.value.receiptFile) {
+  if (formData.value.paymentMethod === 'pay_now' && requireReceipt.value && !formData.value.receiptFile) {
     submitError.value = 'Please upload your payment screenshot/receipt before confirming.'
     return
   }
@@ -206,7 +207,8 @@ useSeoMeta({
                 {{ step }}
               </span>
               <p v-if="step === 'Awaiting Payment' && order.status === 'Awaiting Payment'" class="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
-                <span v-if="order.payment_method === 'pay_now'">Receipt uploaded! Seller will verify payment shortly.</span>
+                <span v-if="order.payment_method === 'pay_now' && order.receipt_uploaded">Receipt uploaded! Seller will verify payment shortly.</span>
+                <span v-else-if="order.payment_method === 'pay_now'">Seller will verify your payment shortly.</span>
                 <span v-else>Pay Cash on Delivery (COD) when package arrives.</span>
               </p>
               <p v-if="step === 'Paid' && order.payment_status === 'Paid'" class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
@@ -310,7 +312,11 @@ useSeoMeta({
 
             <!-- Receipt File Upload -->
             <div class="space-y-1.5 pt-2 border-t border-default/60">
-              <label class="block text-xs font-semibold text-highlighted">Upload Payment Receipt / Screenshot *</label>
+              <label class="block text-xs font-semibold text-highlighted">
+                Upload Payment Receipt / Screenshot
+                <span v-if="requireReceipt">*</span>
+                <span v-else class="font-normal text-dimmed">(optional)</span>
+              </label>
               <div class="flex items-center justify-center w-full">
                 <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-default rounded-xl cursor-pointer bg-background hover:bg-elevated/30 transition-colors">
                   <div class="flex flex-col items-center justify-center pt-2 pb-3">
@@ -335,7 +341,7 @@ useSeoMeta({
 
           <UButton
             type="submit"
-            :label="formData.paymentMethod === 'pay_now' ? 'Upload Receipt & Confirm Order' : 'Confirm Cash on Delivery Order'"
+            :label="formData.paymentMethod === 'pay_now' ? (requireReceipt ? 'Upload Receipt & Confirm Order' : 'Confirm Order') : 'Confirm Cash on Delivery Order'"
             color="primary"
             size="lg"
             block

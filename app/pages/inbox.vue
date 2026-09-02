@@ -96,12 +96,14 @@ const openCreateOrderModal = () => {
 };
 
 // Create Order Handler (Supports repeat orders for the same customer)
+const toast = useToast();
+
 const handleCreateOrder = async () => {
   if (!activeChat.value) return;
 
   isSendingOrder.value = true;
   try {
-    await createOrder({
+    const { autoLinked } = await createOrder({
       conversationId: activeChat.value.id,
       customer: { handle: activeChat.value.handle, name: activeChat.value.name, avatarUrl: activeChat.value.avatar },
       itemName: orderForm.value.item,
@@ -112,6 +114,15 @@ const handleCreateOrder = async () => {
     await Promise.all([loadMessages(activeChat.value.id), fetchConversations()]);
     activeChatId.value = activeChat.value?.id ?? activeChatId.value;
     isOrderModalOpen.value = false;
+
+    if (!autoLinked) {
+      toast.add({
+        title: 'Order created',
+        description: 'Auto-Link DMs is off, so the link wasn\'t sent automatically. Use "Copy Order Link" to share it.',
+        icon: 'i-lucide-link',
+        color: 'neutral'
+      });
+    }
   } finally {
     isSendingOrder.value = false;
   }
