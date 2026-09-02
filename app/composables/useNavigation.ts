@@ -1,15 +1,32 @@
+import { computed } from 'vue'
 import type { NavigationMenuItem, DropdownMenuItem } from '@nuxt/ui'
+import { useStore } from './useStore'
+import { useConversations } from './useConversations'
+import { useOrders } from './useOrders'
 
 export function useNavigation() {
-  const user = ref({
-    name: 'Benjamin Canac',
-    avatar: {
-      src: 'https://github.com/benjamincanac.png',
-      alt: 'Benjamin Canac'
-    }
-  })
+  const { store, fetchStore } = useStore()
+  const { conversations, fetchConversations } = useConversations()
+  const { orders, fetchOrders } = useOrders()
+  const supabase = useSupabaseClient()
+  const router = useRouter()
 
-  const navItems = ref<NavigationMenuItem[]>([
+  if (import.meta.client) {
+    if (!store.value) fetchStore()
+    if (!conversations.value.length) fetchConversations()
+    if (!orders.value.length) fetchOrders()
+  }
+
+  const unreadDmCount = computed(() => conversations.value.reduce((sum, c) => sum + c.unreadCount, 0))
+  const awaitingPaymentCount = computed(() => orders.value.filter(o => o.status === 'Awaiting Payment').length)
+  const storeName = computed(() => store.value?.name || 'My Store')
+
+  const user = computed(() => ({
+    name: storeName.value,
+    avatar: { alt: storeName.value }
+  }))
+
+  const navItems = computed<NavigationMenuItem[]>(() => [
     {
       label: 'Dashboard',
       icon: 'i-lucide-layout-dashboard',
@@ -20,14 +37,14 @@ export function useNavigation() {
       label: 'Inbox',
       icon: 'i-lucide-inbox',
       to: '/inbox',
-      badge: { label: '8', color: 'primary' },
+      ...(unreadDmCount.value > 0 ? { badge: { label: String(unreadDmCount.value), color: 'primary' as const } } : {}),
       description: 'Instagram DM Sales Inbox & Order creation'
     },
     {
       label: 'Orders',
       icon: 'i-lucide-shopping-bag',
       to: '/orders',
-      badge: { label: '3', color: 'warning' },
+      ...(awaitingPaymentCount.value > 0 ? { badge: { label: String(awaitingPaymentCount.value), color: 'warning' as const } } : {}),
       description: 'Manage sales pipeline and track order fulfillments'
     },
     {
@@ -40,19 +57,18 @@ export function useNavigation() {
       label: 'Connect Instagram',
       icon: 'i-simple-icons-instagram',
       to: '/settings',
-      badge: { label: '✓', color: 'success' },
+      badge: store.value?.instagram_connected
+        ? { label: '✓', color: 'success' as const }
+        : { label: '!', color: 'neutral' as const },
       description: 'Connect your Instagram Professional Account'
     }
   ])
 
-  const userMenuItems = ref<DropdownMenuItem[][]>([
+  const userMenuItems = computed<DropdownMenuItem[][]>(() => [
     [
       {
-        label: 'Retro Thrift Store',
-        avatar: {
-          src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          loading: 'lazy'
-        },
+        label: storeName.value,
+        avatar: { alt: storeName.value },
         type: 'label'
       }
     ],
@@ -84,7 +100,11 @@ export function useNavigation() {
       {
         label: 'Logout',
         icon: 'i-lucide-log-out',
-        color: 'error'
+        color: 'error',
+        onSelect: async () => {
+          await supabase.auth.signOut()
+          await router.push('/login')
+        }
       }
     ]
   ])

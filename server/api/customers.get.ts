@@ -1,17 +1,21 @@
-import { serverSupabaseClient } from '#supabase/server';
+import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
-    const client = await serverSupabaseClient(event)
+  const client = await serverSupabaseClient(event)
+  const user = await serverSupabaseUser(event)
 
-    const { data, error } = await client
-        .from('customers')
-        .select('*')
+  if (!user) {
+    throw createError({ statusCode: 401, message: 'Not authenticated' })
+  }
 
-    console.log(data);
+  const { data, error } = await client
+    .from('customers')
+    .select('*, orders(id, order_code, status, payment_status, created_at, order_items(unit_price, quantity))')
+    .order('updated_at', { ascending: false })
 
-    if (error) {
-        throw createError({ statusCode: 500, message: error.message })
-    }
+  if (error) {
+    throw createError({ statusCode: 500, message: error.message })
+  }
 
-    return data
+  return data
 })

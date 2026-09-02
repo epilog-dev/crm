@@ -9,9 +9,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const { data, error } = await client
-    .from('products')
-    .select('*, product_variants(*)')
-    .order('created_at', { ascending: false })
+    .from('conversations')
+    .select('*, orders(id, order_code)')
+    .order('last_message_at', { ascending: false, nullsFirst: false })
 
   if (error) {
     throw createError({ statusCode: 500, message: error.message })

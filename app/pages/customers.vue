@@ -1,65 +1,16 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 useSeoMeta({
   title: 'Customers CRM - Instagram DM Buyers',
   description: 'Buyer directory created automatically from Instagram DMs and confirmed order links.'
 })
 
-const customers = ref([
-  {
-    id: 'CUST-01',
-    name: 'Maria Santos',
-    handle: '@maria',
-    phone: '9876543210',
-    address: '12 Green Park, Bandra West',
-    pincode: '400050',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-    totalOrders: 2,
-    totalSpent: 3100,
-    lastOrder: 'Nike Vintage Windbreaker',
-    platform: 'Instagram DM'
-  },
-  {
-    id: 'CUST-02',
-    name: 'Priya Sharma',
-    handle: '@priya_s',
-    phone: '9876543211',
-    address: 'Flat 402, Sunshine Apartments, MG Road, Bengaluru',
-    pincode: '560001',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-    totalOrders: 1,
-    totalSpent: 2400,
-    lastOrder: 'Silk Slip Dress (Emerald)',
-    platform: 'Instagram DM'
-  },
-  {
-    id: 'CUST-03',
-    name: 'Marcus Chen',
-    handle: '@marcus_c',
-    phone: '9876543212',
-    address: '77 Park Street, Kolkata',
-    pincode: '700016',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
-    totalOrders: 3,
-    totalSpent: 8500,
-    lastOrder: 'Raw Denim Jacket',
-    platform: 'Instagram DM'
-  },
-  {
-    id: 'CUST-04',
-    name: 'Chloe Bennett',
-    handle: '@chloeb',
-    phone: '9876543213',
-    address: '45 Jubilee Hills, Hyderabad',
-    pincode: '500033',
-    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100',
-    totalOrders: 1,
-    totalSpent: 1800,
-    lastOrder: 'Chunky Knit Sweater',
-    platform: 'Instagram DM'
-  }
-])
+const { customers, fetchCustomers } = useCustomers()
+
+onMounted(() => {
+  fetchCustomers()
+})
 
 // View mode state: 'auto' (Card on small screens, Table on large), 'cards', or 'table'
 const activeView = ref<'auto' | 'cards' | 'table'>('auto')

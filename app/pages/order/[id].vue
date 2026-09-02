@@ -1,100 +1,79 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 definePageMeta({
-  layout: false
+  layout: false,
+  auth: false
 })
+
+interface PublicOrderItem {
+  item_name: string
+  variant_label: string | null
+  quantity: number
+  unit_price: number
+  currency: string
+}
+
+interface PublicOrder {
+  id: string
+  order_code: string
+  status: 'Confirmed' | 'Awaiting Payment' | 'Paid' | 'Shipped' | 'Delivered' | 'Cancelled'
+  payment_status: 'Pending' | 'Paid'
+  payment_method: 'pay_now' | 'cod' | null
+  currency: string
+  customer_name: string | null
+  customer_phone: string | null
+  customer_address: string | null
+  customer_pincode: string | null
+  confirmed_by_customer: boolean
+  receipt_uploaded: boolean
+  created_at: string
+  order_items: PublicOrderItem[]
+  store: { name: string, upi_vpa: string | null, cod_enabled: boolean }
+}
 
 const route = useRoute()
+const orderCode = computed(() => route.params.id as string)
 
-// Mock data store for orders
-const mockOrders = ref<Record<string, any>>({
-  'ORD-1082': {
-    id: 'ORD-1082',
-    customer: {
-      name: 'Maria Santos',
-      handle: '@maria',
-      phone: '',
-      address: '',
-      pincode: ''
-    },
-    item: 'Nike Vintage Windbreaker Jacket',
-    variant: 'M',
-    price: 1500,
-    currency: '₹',
-    status: 'Confirmed', // Confirmed, Awaiting Payment, Paid, Shipped, Delivered, Cancelled
-    paymentStatus: 'Pending', // Pending, Paid
-    confirmedByCustomer: false,
-    paymentMethod: 'pay_now',
-    receiptUploaded: false,
-    createdAt: 'Today, 2:30 PM'
-  },
-  'ORD-1079': {
-    id: 'ORD-1079',
-    customer: {
-      name: 'Priya Sharma',
-      handle: '@priya_s',
-      phone: '9876543210',
-      address: 'Flat 402, Sunshine Apartments, MG Road, Bengaluru',
-      pincode: '560001'
-    },
-    item: 'Silk Slip Dress (Emerald)',
-    variant: 'S',
-    price: 2400,
-    currency: '₹',
-    status: 'Awaiting Payment',
-    paymentStatus: 'Pending',
-    confirmedByCustomer: true,
-    paymentMethod: 'cod',
-    receiptUploaded: false,
-    createdAt: 'Yesterday'
-  }
-})
+const order = ref<PublicOrder | null>(null)
+const loadError = ref('')
+const loadingOrder = ref(true)
 
-const orderId = computed(() => (route.params.id as string) || 'ORD-1082')
+async function loadOrder() {
+  loadingOrder.value = true
+  loadError.value = ''
+  try {
+    order.value = await $fetch<PublicOrder>(`/api/order/${orderCode.value}`)
+    formData.value.name = order.value.customer_name || formData.value.name
+    formData.value.phone = order.value.customer_phone || formData.value.phone
+    formData.value.address = order.value.customer_address || formData.value.address
+    formData.value.pincode = order.value.customer_pincode || formData.value.pincode
+    if (order.value.payment_method) formData.value.paymentMethod = order.value.payment_method
+  } catch {
+    loadError.value = 'This order link is invalid or has expired.'
+  } finally {
+    loadingOrder.value = false
+  }
+}
 
-const order = computed(() => {
-  if (mockOrders.value[orderId.value]) {
-    return mockOrders.value[orderId.value]
-  }
-  return {
-    id: orderId.value,
-    customer: {
-      name: 'Maria Santos',
-      handle: '@maria',
-      phone: '',
-      address: '',
-      pincode: ''
-    },
-    item: 'Nike Vintage Windbreaker Jacket',
-    variant: 'M',
-    price: 1500,
-    currency: '₹',
-    status: 'Confirmed',
-    paymentStatus: 'Pending',
-    confirmedByCustomer: false,
-    paymentMethod: 'pay_now',
-    receiptUploaded: false,
-    createdAt: 'Just now'
-  }
-})
+onMounted(loadOrder)
+
+const item = computed(() => order.value?.order_items?.[0])
+const allowCod = computed(() => order.value?.store?.cod_enabled ?? false)
+const isSubmitted = computed(() => order.value?.confirmed_by_customer ?? false)
 
 const formData = ref({
-  name: order.value.customer.name || '',
-  phone: order.value.customer.phone || '',
-  address: order.value.customer.address || '',
-  pincode: order.value.customer.pincode || '',
+  name: '',
+  phone: '',
+  address: '',
+  pincode: '',
   paymentMethod: 'pay_now' as 'pay_now' | 'cod',
   receiptFile: null as File | null,
   receiptFileName: ''
 })
 
 const isSubmitting = ref(false)
-const isSubmitted = ref(order.value.confirmedByCustomer)
-
-const { sellerSettings } = useSellerSettings()
-
-const allowCod = computed(() => sellerSettings.value.codEnabled)
+const submitError = ref('')
 
 function handleFileSelect(event: Event) {
   const input = event.target as HTMLInputElement
@@ -104,29 +83,39 @@ function handleFileSelect(event: Event) {
   }
 }
 
-function handleConfirmOrder() {
+async function handleConfirmOrder() {
   if (!formData.value.name || !formData.value.phone || !formData.value.address || !formData.value.pincode) return
-  
-  if (formData.value.paymentMethod === 'pay_now' && !formData.value.receiptFileName) {
-    alert('Please upload your payment screenshot/receipt before confirming.')
+
+  if (formData.value.paymentMethod === 'pay_now' && !formData.value.receiptFile) {
+    submitError.value = 'Please upload your payment screenshot/receipt before confirming.'
     return
   }
 
+  submitError.value = ''
   isSubmitting.value = true
-  setTimeout(() => {
-    order.value.customer.name = formData.value.name
-    order.value.customer.phone = formData.value.phone
-    order.value.customer.address = formData.value.address
-    order.value.customer.pincode = formData.value.pincode
-    order.value.paymentMethod = formData.value.paymentMethod
-    order.value.receiptUploaded = !!formData.value.receiptFileName
-    
-    // Status updates: Pay Now uploaded receipt moves to 'Awaiting Payment' (pending seller check), COD moves to 'Confirmed/Awaiting Payment'
-    order.value.status = 'Awaiting Payment'
-    order.value.confirmedByCustomer = true
-    isSubmitted.value = true
+  try {
+    if (formData.value.paymentMethod === 'pay_now' && formData.value.receiptFile) {
+      const body = new FormData()
+      body.append('file', formData.value.receiptFile)
+      await $fetch(`/api/order/${orderCode.value}/receipt`, { method: 'POST', body })
+    }
+
+    order.value = await $fetch<PublicOrder>(`/api/order/${orderCode.value}`, {
+      method: 'PATCH',
+      body: {
+        name: formData.value.name,
+        phone: formData.value.phone,
+        address: formData.value.address,
+        pincode: formData.value.pincode,
+        payment_method: formData.value.paymentMethod
+      }
+    })
+  } catch (err) {
+    const message = (err as { data?: { message?: string } })?.data?.message
+    submitError.value = message || 'Something went wrong. Please try again.'
+  } finally {
     isSubmitting.value = false
-  }, 800)
+  }
 }
 
 const statusSteps = ['Confirmed', 'Awaiting Payment', 'Paid', 'Shipped', 'Delivered']
@@ -136,38 +125,49 @@ function getStepIndex(status: string) {
 }
 
 useSeoMeta({
-  title: `Order #${orderId.value} - Confirm Details`,
+  title: `Order #${orderCode.value} - Confirm Details`,
   description: 'Customer order confirmation, payment QR, and delivery tracking page'
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col justify-between p-4 sm:p-6 font-sans">
-    <div class="max-w-md mx-auto w-full space-y-6 py-6">
-      
+    <!-- Loading state -->
+    <div v-if="loadingOrder" class="flex-1 flex items-center justify-center">
+      <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-dimmed" />
+    </div>
+
+    <!-- Error state -->
+    <div v-else-if="loadError || !order" class="flex-1 flex flex-col items-center justify-center text-center space-y-2 max-w-sm mx-auto">
+      <UIcon name="i-lucide-package-x" class="size-8 text-dimmed" />
+      <h1 class="text-base font-bold text-highlighted">Order not found</h1>
+      <p class="text-xs text-dimmed">{{ loadError || 'This order link is invalid.' }}</p>
+    </div>
+
+    <div v-else class="max-w-md mx-auto w-full space-y-6 py-6">
+
       <!-- Store Header -->
       <div class="text-center space-y-1">
         <div class="size-14 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center font-bold text-xl mx-auto shadow-md">
-          ST
+          {{ order.store.name.slice(0, 2).toUpperCase() }}
         </div>
-        <h1 class="text-lg font-bold text-highlighted">Retro Thrift Store</h1>
-        <p class="text-xs text-dimmed">Instagram Sales Order #{{ order.id }}</p>
+        <h1 class="text-lg font-bold text-highlighted">{{ order.store.name }}</h1>
+        <p class="text-xs text-dimmed">Instagram Sales Order #{{ order.order_code }}</p>
       </div>
 
       <!-- Item Details Card -->
-      <div class="bg-background rounded-2xl border border-default p-4 shadow-xs space-y-3">
+      <div v-if="item" class="bg-background rounded-2xl border border-default p-4 shadow-xs space-y-3">
         <div class="flex justify-between items-start">
           <div>
-            <h2 class="font-bold text-highlighted text-base">{{ order.item }}</h2>
-            <div class="flex items-center gap-2 mt-1">
+            <h2 class="font-bold text-highlighted text-base">{{ item.item_name }}</h2>
+            <div v-if="item.variant_label" class="flex items-center gap-2 mt-1">
               <span class="text-xs px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-dimmed font-medium">
-                Variant: {{ order.variant }}
+                Variant: {{ item.variant_label }}
               </span>
-              <span class="text-xs text-muted">For {{ order.customer.handle }}</span>
             </div>
           </div>
           <div class="text-right">
-            <span class="text-lg font-extrabold text-highlighted">{{ order.currency }}{{ order.price.toLocaleString('en-IN') }}</span>
+            <span class="text-lg font-extrabold text-highlighted">{{ item.currency }}{{ item.unit_price.toLocaleString('en-IN') }}</span>
           </div>
         </div>
       </div>
@@ -206,10 +206,10 @@ useSeoMeta({
                 {{ step }}
               </span>
               <p v-if="step === 'Awaiting Payment' && order.status === 'Awaiting Payment'" class="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
-                <span v-if="order.paymentMethod === 'pay_now'">Receipt uploaded! Seller will verify payment shortly.</span>
+                <span v-if="order.payment_method === 'pay_now'">Receipt uploaded! Seller will verify payment shortly.</span>
                 <span v-else>Pay Cash on Delivery (COD) when package arrives.</span>
               </p>
-              <p v-if="step === 'Paid' && order.paymentStatus === 'Paid'" class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <p v-if="step === 'Paid' && order.payment_status === 'Paid'" class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
                 Payment verified by seller.
               </p>
             </div>
@@ -220,7 +220,7 @@ useSeoMeta({
           <p class="font-semibold text-highlighted">Delivery Information:</p>
           <p class="text-dimmed">{{ formData.name }} • {{ formData.phone }}</p>
           <p class="text-dimmed">{{ formData.address }}, {{ formData.pincode }}</p>
-          <p class="text-muted mt-1">Payment Choice: <strong class="text-highlighted uppercase">{{ order.paymentMethod === 'pay_now' ? 'UPI / QR Paid' : 'Cash on Delivery (COD)' }}</strong></p>
+          <p class="text-muted mt-1">Payment Choice: <strong class="text-highlighted uppercase">{{ order.payment_method === 'pay_now' ? 'UPI / QR Paid' : 'Cash on Delivery (COD)' }}</strong></p>
         </div>
       </div>
 
@@ -298,14 +298,14 @@ useSeoMeta({
           <!-- PAY NOW CONDITIONAL CONTENT: QR Code & Receipt Upload -->
           <div v-if="formData.paymentMethod === 'pay_now'" class="p-4 rounded-xl bg-elevated/40 border border-default space-y-3">
             <div class="text-center space-y-2">
-              <span class="text-xs font-bold text-highlighted">Scan QR to pay {{ order.currency }}{{ order.price.toLocaleString('en-IN') }}</span>
+              <span class="text-xs font-bold text-highlighted">Scan QR to pay {{ item?.currency }}{{ item?.unit_price.toLocaleString('en-IN') }}</span>
               <!-- Mock UPI QR Code SVG -->
               <div class="size-36 mx-auto bg-white p-2 rounded-xl border border-default flex items-center justify-center shadow-xs">
                 <svg viewBox="0 0 100 100" class="w-full h-full text-black">
                   <path fill="currentColor" d="M0 0h30v30H0zM40 0h10v10H40zM60 0h10v10H60zM70 0h30v30H70zM10 10h10v10H10zM80 10h10v10H80zM0 40h10v10H0zM20 40h20v10H20zM50 40h10v10H50zM70 40h20v10H70zM0 60h10v10H0zM30 60h10v10H30zM50 60h20v10H50zM80 60h20v10H80zM0 70h30v30H0zM40 70h20v10H40zM70 70h30v30H70zM10 80h10v10H10zM80 80h10v10H80z" />
                 </svg>
               </div>
-              <p class="text-[11px] text-dimmed font-mono">UPI ID: retrothrift@upi</p>
+              <p class="text-[11px] text-dimmed font-mono">UPI ID: {{ order.store.upi_vpa || 'Not configured yet' }}</p>
             </div>
 
             <!-- Receipt File Upload -->
@@ -325,6 +325,13 @@ useSeoMeta({
               </div>
             </div>
           </div>
+
+          <UAlert
+            v-if="submitError"
+            color="error"
+            variant="soft"
+            :description="submitError"
+          />
 
           <UButton
             type="submit"

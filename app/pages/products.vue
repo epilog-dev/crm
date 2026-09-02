@@ -31,7 +31,7 @@ const columns: TableColumn<any>[] = [
     header: 'Title'
   },
   {
-    accessorKey: 'price',
+    accessorKey: 'base_price',
     header: 'Price'
   },
   {

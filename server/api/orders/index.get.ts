@@ -9,8 +9,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const { data, error } = await client
-    .from('products')
-    .select('*, product_variants(*)')
+    .from('orders')
+    .select('*, customer:customers(*), order_items(*)')
     .order('created_at', { ascending: false })
 
   if (error) {

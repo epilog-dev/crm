@@ -1,91 +1,68 @@
 <script lang="ts" setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 
 useSeoMeta({
   title: "Instagram DM Inbox - Sales Workspace",
   description: "Unified Instagram DM sales inbox. Turn DMs into orders in 1 click.",
 });
 
-interface ChatMessage {
-  id: number
-  text: string
-  sender: 'them' | 'me'
-  time: string
-}
+const {
+  conversations,
+  fetchConversations,
+  loadMessages,
+  sendMessage: sendMessageApi,
+  markRead,
+  startConversation,
+} = useConversations();
+const { createOrder } = useOrders();
 
-interface Conversation {
-  id: number
-  name: string
-  handle: string
-  avatar: string
-  platform: string
-  lastMessage: string
-  time: string
-  unreadCount: number
-  orderIds: string[] // Array of orders linked to this conversation
-  messages: ChatMessage[]
-}
-
-// Mock conversations data with multiple order support
-const conversations = ref<Conversation[]>([
-  {
-    id: 1,
-    name: "Maria Santos",
-    handle: "@maria",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-    platform: "instagram",
-    lastMessage: "I'll take it.",
-    time: "10:24 AM",
-    unreadCount: 1,
-    orderIds: ["ORD-1082"],
-    messages: [
-      { id: 1, text: "Hi! How much for the Nike Vintage Windbreaker Jacket?", sender: "them", time: "10:20 AM" },
-      { id: 2, text: "Hey @maria! It's ₹1,500 for size M. Excellent condition!", sender: "me", time: "10:22 AM" },
-      { id: 3, text: "I'll take it.", sender: "them", time: "10:24 AM" },
-    ]
-  },
-  {
-    id: 2,
-    name: "Rohan Gupta",
-    handle: "@rohan_g",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-    platform: "instagram",
-    lastMessage: "Is the leather jacket still available?",
-    time: "Yesterday",
-    unreadCount: 0,
-    orderIds: [],
-    messages: [
-      { id: 1, text: "Is the leather jacket still available?", sender: "them", time: "Yesterday, 3:15 PM" },
-    ]
-  },
-  {
-    id: 3,
-    name: "Emily Watson",
-    handle: "@emily_wats",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
-    platform: "instagram",
-    lastMessage: "Order link confirmed! Sent shipping address.",
-    time: "2 days ago",
-    unreadCount: 0,
-    orderIds: ["ORD-1079", "ORD-1042"],
-    messages: [
-      { id: 1, text: "I'll take the Silk Slip Dress (Emerald) in S!", sender: "them", time: "Aug 23, 11:00 AM" },
-      { id: 2, text: "Awesome! Here is your order link: https://crm.app/order/ORD-1079", sender: "me", time: "Aug 23, 11:05 AM" },
-      { id: 3, text: "Order link confirmed! Sent shipping address.", sender: "them", time: "Aug 23, 11:07 AM" },
-    ]
-  }
-]);
-
-const activeChatId = ref<number | null>(1);
+const activeChatId = ref<string | null>(null);
 const searchQuery = ref("");
 const replyText = ref("");
+const isSendingOrder = ref(false);
 
 // Create Order Modal state
 const isOrderModalOpen = ref(false);
 const orderForm = ref({
-  item: "Nike Vintage Windbreaker Jacket",
-  variant: "M",
-  price: 1500,
+  item: "",
+  variant: "",
+  price: 0,
+});
+
+// New Conversation Modal state (simulates an incoming DM until the Meta webhook is wired up)
+const isNewConversationModalOpen = ref(false);
+const isStartingConversation = ref(false);
+const newConversationForm = ref({
+  handle: "",
+  name: "",
+  message: "",
+});
+
+const handleStartConversation = async () => {
+  if (!newConversationForm.value.handle.trim()) return;
+  isStartingConversation.value = true;
+  try {
+    await startConversation({
+      handle: newConversationForm.value.handle,
+      name: newConversationForm.value.name || undefined,
+      message: newConversationForm.value.message || undefined,
+    });
+    const created = conversations.value.find(
+      c => c.handle.replace('@', '') === newConversationForm.value.handle.replace('@', '')
+    );
+    if (created) await selectChat(created.id);
+    newConversationForm.value = { handle: "", name: "", message: "" };
+    isNewConversationModalOpen.value = false;
+  } finally {
+    isStartingConversation.value = false;
+  }
+};
+
+onMounted(async () => {
+  await fetchConversations();
+  if (!activeChatId.value && conversations.value.length) {
+    selectChat(conversations.value[0].id);
+  }
 });
 
 // Computed selected chat
@@ -102,13 +79,10 @@ const filteredConversations = computed(() => {
   });
 });
 
-// Select chat and clear unread
-const selectChat = (id: number) => {
+// Select chat, lazy-load its messages, and clear unread
+const selectChat = async (id: string) => {
   activeChatId.value = id;
-  const chat = conversations.value.find(c => c.id === id);
-  if (chat) {
-    chat.unreadCount = 0;
-  }
+  await Promise.all([loadMessages(id), markRead(id)]);
 };
 
 // Open Create Order Modal
@@ -122,47 +96,41 @@ const openCreateOrderModal = () => {
 };
 
 // Create Order Handler (Supports repeat orders for the same customer)
-const handleCreateOrder = () => {
+const handleCreateOrder = async () => {
   if (!activeChat.value) return;
 
-  const newOrderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-  activeChat.value.orderIds.unshift(newOrderId); // Add to customer's order history array
+  isSendingOrder.value = true;
+  try {
+    await createOrder({
+      conversationId: activeChat.value.id,
+      customer: { handle: activeChat.value.handle, name: activeChat.value.name, avatarUrl: activeChat.value.avatar },
+      itemName: orderForm.value.item,
+      variantLabel: orderForm.value.variant,
+      price: orderForm.value.price,
+    });
 
-  const link = `${window.location.origin}/order/${newOrderId}`;
-  const orderMessageText = `📦 Order created (#${newOrderId})!\nItem: ${orderForm.value.item}\nVariant: ${orderForm.value.variant}\nPrice: ₹${orderForm.value.price.toLocaleString('en-IN')}\n\nPlease click your unique order link to enter your shipping details and confirm:\n${link}`;
-
-  activeChat.value.messages.push({
-    id: activeChat.value.messages.length + 1,
-    text: orderMessageText,
-    sender: "me",
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  });
-
-  activeChat.value.lastMessage = `Order Link Sent (#${newOrderId})`;
-  activeChat.value.time = "Just now";
-
-  isOrderModalOpen.value = false;
+    await Promise.all([loadMessages(activeChat.value.id), fetchConversations()]);
+    activeChatId.value = activeChat.value?.id ?? activeChatId.value;
+    isOrderModalOpen.value = false;
+  } finally {
+    isSendingOrder.value = false;
+  }
 };
 
 // Send standard message handler
-const sendMessage = () => {
+const sendMessage = async () => {
   if (!replyText.value.trim() || !activeChat.value) return;
 
   const text = replyText.value;
-  const now = new Date();
-  const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  activeChat.value.messages.push({
-    id: activeChat.value.messages.length + 1,
-    text: text,
-    sender: "me",
-    time: timeString
-  });
-
-  activeChat.value.lastMessage = text;
-  activeChat.value.time = timeString;
   replyText.value = "";
+  await sendMessageApi(activeChat.value.id, text);
 };
+
+function copyOrderLink(text: string) {
+  const match = text.match(/\/order\/(\S+)/);
+  const code = match ? match[1] : '';
+  navigator.clipboard.writeText(`${window.location.origin}/order/${code}`);
+}
 </script>
 
 <template>
@@ -181,9 +149,20 @@ const sendMessage = () => {
               <UIcon name="i-simple-icons-instagram" class="size-5 text-pink-500" />
               <h2 class="text-base font-bold text-highlighted">Instagram Sales DM</h2>
             </div>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 font-semibold">
-              Meta API Live
-            </span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 font-semibold">
+                Meta API Live
+              </span>
+              <UButton
+                icon="i-lucide-plus"
+                size="xs"
+                color="neutral"
+                variant="outline"
+                class="cursor-pointer"
+                title="Simulate an incoming DM"
+                @click="isNewConversationModalOpen = true"
+              />
+            </div>
           </div>
           <UInput
             v-model="searchQuery"
@@ -194,8 +173,28 @@ const sendMessage = () => {
           />
         </div>
 
+        <!-- Empty state: no conversations yet -->
+        <div v-if="conversations.length === 0" class="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3">
+          <div class="size-14 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+            <UIcon name="i-lucide-inbox" class="size-7 text-dimmed" />
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-highlighted">No conversations yet</h4>
+            <p class="text-xs text-dimmed max-w-xs mx-auto mt-0.5">
+              DMs will sync here automatically once Instagram is connected. For now, add one to try the workflow.
+            </p>
+          </div>
+          <UButton
+            label="+ New Conversation"
+            size="sm"
+            color="primary"
+            class="font-bold cursor-pointer"
+            @click="isNewConversationModalOpen = true"
+          />
+        </div>
+
         <!-- Conversations list -->
-        <div class="flex-1 overflow-y-auto divide-y divide-default/50">
+        <div v-else class="flex-1 overflow-y-auto divide-y divide-default/50">
           <div
             v-for="chat in filteredConversations"
             :key="chat.id"
@@ -302,7 +301,7 @@ const sendMessage = () => {
                 <div class="min-w-0 truncate">
                   <span class="font-bold text-highlighted">Delivery Summary:</span>
                   <span class="text-dimmed ml-1">
-                    {{ activeChat.name === 'Maria Santos' ? '12 Green Park, Bandra West, Mumbai (400050) • 9876543210' : 'Address details confirmed on order link' }}
+                    Address details confirmed on order link
                   </span>
                 </div>
               </div>
@@ -333,7 +332,7 @@ const sendMessage = () => {
                 <button
                   v-if="msg.text.includes('/order/')"
                   type="button"
-                  @click="navigator.clipboard.writeText(msg.text.split('\n').pop() || '')"
+                  @click="copyOrderLink(msg.text)"
                   class="mt-2 text-[10px] px-2 py-0.5 rounded bg-background/20 hover:bg-background/40 font-bold flex items-center gap-1 cursor-pointer transition-all border border-white/20"
                 >
                   <UIcon name="i-lucide-copy" class="size-3" />
@@ -432,7 +431,31 @@ const sendMessage = () => {
 
           <div class="pt-2 flex justify-end gap-2">
             <UButton label="Cancel" color="neutral" variant="ghost" @click="isOrderModalOpen = false" />
-            <UButton type="submit" label="Generate & Send New Order Link" color="primary" class="font-bold cursor-pointer" />
+            <UButton type="submit" label="Generate & Send New Order Link" color="primary" class="font-bold cursor-pointer" :loading="isSendingOrder" />
+          </div>
+        </form>
+      </template>
+    </UModal>
+
+    <!-- Simulate Incoming DM Modal (stand-in until the Meta webhook is wired up) -->
+    <UModal v-model:open="isNewConversationModalOpen" title="Simulate an Incoming DM" description="Add a conversation manually to try the workflow before Instagram is connected.">
+      <template #body>
+        <form @submit.prevent="handleStartConversation" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-highlighted mb-1">Instagram Handle</label>
+            <UInput v-model="newConversationForm.handle" placeholder="e.g. @maria" required class="w-full" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-highlighted mb-1">Display Name (optional)</label>
+            <UInput v-model="newConversationForm.name" placeholder="e.g. Maria Santos" class="w-full" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-highlighted mb-1">First Message (optional)</label>
+            <UTextarea v-model="newConversationForm.message" placeholder="e.g. How much for the jacket?" class="w-full" :rows="3" />
+          </div>
+          <div class="pt-2 flex justify-end gap-2">
+            <UButton label="Cancel" color="neutral" variant="ghost" @click="isNewConversationModalOpen = false" />
+            <UButton type="submit" label="Start Conversation" color="primary" class="font-bold cursor-pointer" :loading="isStartingConversation" />
           </div>
         </form>
       </template>

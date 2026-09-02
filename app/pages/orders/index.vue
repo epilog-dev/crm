@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import type { OrderViewModel as Order } from '~/composables/useOrders'
 
 definePageMeta({
   title: 'Order Management Dashboard'
@@ -9,123 +10,17 @@ useSeoMeta({
   title: 'Orders Dashboard - Instagram DM Sales'
 })
 
-export interface Order {
-  id: string
-  customer: {
-    name: string
-    handle: string
-    phone?: string
-    address?: string
-    pincode?: string
-    avatar?: string
-  }
-  item: string
-  variant: string
-  price: number
-  currency: string
-  status: 'Confirmed' | 'Awaiting Payment' | 'Paid' | 'Shipped' | 'Delivered' | 'Cancelled'
-  paymentStatus: 'Pending' | 'Paid'
-  time: string
-  orderLink: string
-}
+const {
+  orders,
+  pending,
+  fetchOrders,
+  updateOrderStatus: updateOrderStatusApi,
+  updatePaymentStatus: updatePaymentStatusApi
+} = useOrders()
 
-const orders = ref<Order[]>([
-  {
-    id: 'ORD-1082',
-    customer: {
-      name: 'Maria Santos',
-      handle: '@maria',
-      phone: '9876543210',
-      address: '12 Green Park, Bandra West, Mumbai',
-      pincode: '400050',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100'
-    },
-    item: 'Nike Vintage Windbreaker Jacket',
-    variant: 'M',
-    price: 1500,
-    currency: '₹',
-    status: 'Confirmed',
-    paymentStatus: 'Pending',
-    time: '10 mins ago',
-    orderLink: '/order/ORD-1082'
-  },
-  {
-    id: 'ORD-1079',
-    customer: {
-      name: 'Priya Sharma',
-      handle: '@priya_s',
-      phone: '9876543211',
-      address: 'Flat 402, Sunshine Apartments, MG Road, Bengaluru',
-      pincode: '560001',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
-    },
-    item: 'Silk Slip Dress (Emerald)',
-    variant: 'S',
-    price: 2400,
-    currency: '₹',
-    status: 'Awaiting Payment',
-    paymentStatus: 'Pending',
-    time: '1 hour ago',
-    orderLink: '/order/ORD-1079'
-  },
-  {
-    id: 'ORD-1076',
-    customer: {
-      name: 'Marcus Chen',
-      handle: '@marcus_c',
-      phone: '9876543212',
-      address: '77 Park Street, Kolkata',
-      pincode: '700016',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'
-    },
-    item: 'Raw Denim Jacket',
-    variant: 'L',
-    price: 3200,
-    currency: '₹',
-    status: 'Paid',
-    paymentStatus: 'Paid',
-    time: '3 hours ago',
-    orderLink: '/order/ORD-1076'
-  },
-  {
-    id: 'ORD-1071',
-    customer: {
-      name: 'Chloe Bennett',
-      handle: '@chloeb',
-      phone: '9876543213',
-      address: '45 Jubilee Hills, Hyderabad',
-      pincode: '500033',
-      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100'
-    },
-    item: 'Chunky Knit Sweater',
-    variant: 'Free Size',
-    price: 1800,
-    currency: '₹',
-    status: 'Shipped',
-    paymentStatus: 'Paid',
-    time: 'Yesterday',
-    orderLink: '/order/ORD-1071'
-  },
-  {
-    id: 'ORD-1065',
-    customer: {
-      name: 'Ananya Roy',
-      handle: '@ananya_r',
-      phone: '9876543214',
-      address: '14 Salt Lake, Kolkata',
-      pincode: '700091',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100'
-    },
-    item: 'Vintage Leather Belt',
-    variant: 'Brown',
-    price: 950,
-    currency: '₹',
-    status: 'Delivered',
-    paymentStatus: 'Paid',
-    time: '3 days ago',
-    orderLink: '/order/ORD-1065'
-  }
-])
+onMounted(() => {
+  fetchOrders()
+})
 
 const viewMode = ref<'table' | 'kanban'>('table')
 const search = ref('')
@@ -161,7 +56,7 @@ const filteredOrders = computed(() => {
     const matchesStatus = selectedStatusFilter.value === 'All' || o.status === selectedStatusFilter.value
     const q = search.value.toLowerCase()
     const matchesSearch = !q ||
-      o.id.toLowerCase().includes(q) ||
+      o.orderCode.toLowerCase().includes(q) ||
       o.item.toLowerCase().includes(q) ||
       o.customer.name.toLowerCase().includes(q) ||
       o.customer.handle.toLowerCase().includes(q)
@@ -176,16 +71,15 @@ function onDragStart(orderId: string) {
   draggedOrderId.value = orderId
 }
 
-function onDrop(targetStatus: Order['status']) {
+async function onDrop(targetStatus: Order['status']) {
   if (!draggedOrderId.value) return
-  const order = orders.value.find(o => o.id === draggedOrderId.value)
-  if (order) {
-    order.status = targetStatus
-    if (targetStatus === 'Paid' || targetStatus === 'Shipped' || targetStatus === 'Delivered') {
-      order.paymentStatus = 'Paid'
-    }
-  }
+  const id = draggedOrderId.value
   draggedOrderId.value = null
+
+  await updateOrderStatusApi(id, targetStatus)
+  if (targetStatus === 'Paid' || targetStatus === 'Shipped' || targetStatus === 'Delivered') {
+    await updatePaymentStatusApi(id, 'Paid')
+  }
 }
 
 function openOrderDetails(order: Order) {
@@ -193,23 +87,23 @@ function openOrderDetails(order: Order) {
   isSlideoverOpen.value = true
 }
 
-function updateOrderStatus(newStatus: Order['status']) {
-  if (selectedOrder.value) {
-    selectedOrder.value.status = newStatus
-  }
+async function updateOrderStatus(newStatus: Order['status']) {
+  if (!selectedOrder.value) return
+  const updated = await updateOrderStatusApi(selectedOrder.value.id, newStatus)
+  selectedOrder.value = updated
 }
 
-function togglePaymentStatus() {
-  if (selectedOrder.value) {
-    if (selectedOrder.value.paymentStatus === 'Pending') {
-      selectedOrder.value.paymentStatus = 'Paid'
-      if (selectedOrder.value.status === 'Awaiting Payment' || selectedOrder.value.status === 'Confirmed') {
-        selectedOrder.value.status = 'Paid'
-      }
-    } else {
-      selectedOrder.value.paymentStatus = 'Pending'
-      selectedOrder.value.status = 'Awaiting Payment'
+async function togglePaymentStatus() {
+  if (!selectedOrder.value) return
+  if (selectedOrder.value.paymentStatus === 'Pending') {
+    const updated = await updatePaymentStatusApi(selectedOrder.value.id, 'Paid')
+    selectedOrder.value = updated
+    if (updated.status === 'Confirmed' || updated.status === 'Awaiting Payment') {
+      selectedOrder.value = await updateOrderStatusApi(updated.id, 'Paid')
     }
+  } else {
+    const updated = await updatePaymentStatusApi(selectedOrder.value.id, 'Pending')
+    selectedOrder.value = await updateOrderStatusApi(updated.id, 'Awaiting Payment')
   }
 }
 
@@ -309,8 +203,13 @@ function getBadgeColor(status: Order['status']) {
       </div>
     </div>
 
+    <div v-if="pending" class="flex items-center justify-center py-12 text-dimmed text-xs gap-2">
+      <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
+      Loading orders...
+    </div>
+
     <!-- VIEW 1: Table View -->
-    <div v-if="viewMode === 'table'" class="border border-default rounded-xl overflow-hidden bg-background">
+    <div v-if="!pending && viewMode === 'table'" class="border border-default rounded-xl overflow-hidden bg-background">
       <table class="w-full text-left text-xs">
         <thead class="bg-elevated/50 border-b border-default text-muted uppercase font-semibold">
           <tr>
@@ -331,7 +230,7 @@ function getBadgeColor(status: Order['status']) {
             @click="openOrderDetails(order)"
           >
             <td class="p-3 font-mono font-bold text-highlighted">
-              {{ order.id }}
+              {{ order.orderCode }}
             </td>
             <td class="p-3">
               <div class="flex items-center gap-2">
@@ -399,7 +298,7 @@ function getBadgeColor(status: Order['status']) {
     </div>
 
     <!-- VIEW 2: Kanban Board View (Horizontal Scrollable Container for High Volume) -->
-    <div v-else class="space-y-2">
+    <div v-else-if="!pending" class="space-y-2">
       <!-- Kanban Hint -->
       <p class="text-xs text-dimmed">
         💡 Drag cards between columns to update status. For large volumes, search/filter above or switch to Table View.
@@ -434,7 +333,7 @@ function getBadgeColor(status: Order['status']) {
               class="bg-background border border-default hover:border-primary/50 rounded-lg p-3 shadow-xs cursor-grab active:cursor-grabbing transition-all space-y-2"
             >
               <div class="flex items-center justify-between">
-                <span class="font-mono text-xs font-bold text-primary">{{ ord.id }}</span>
+                <span class="font-mono text-xs font-bold text-primary">{{ ord.orderCode }}</span>
                 <span class="font-bold text-xs text-highlighted">{{ ord.currency }}{{ ord.price.toLocaleString('en-IN') }}</span>
               </div>
 
@@ -466,7 +365,7 @@ function getBadgeColor(status: Order['status']) {
     <!-- Order Management Slideover -->
     <USlideover
       v-model:open="isSlideoverOpen"
-      :title="selectedOrder ? `${selectedOrder.id} - ${selectedOrder.customer.handle}` : 'Order details'"
+      :title="selectedOrder ? `${selectedOrder.orderCode} - ${selectedOrder.customer.handle}` : 'Order details'"
       description="Manage order lifecycle & payment status"
     >
       <template #body>
@@ -613,7 +512,7 @@ function getBadgeColor(status: Order['status']) {
               </div>
               <div class="text-right">
                 <span class="font-mono font-extrabold text-sm border-2 border-black px-2 py-0.5 rounded">
-                  {{ selectedOrder.id }}
+                  {{ selectedOrder.orderCode }}
                 </span>
               </div>
             </div>

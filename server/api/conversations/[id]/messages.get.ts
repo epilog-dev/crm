@@ -8,10 +8,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Not authenticated' })
   }
 
+  const conversationId = getRouterParam(event, 'id')
+
   const { data, error } = await client
-    .from('products')
-    .select('*, product_variants(*)')
-    .order('created_at', { ascending: false })
+    .from('messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true })
 
   if (error) {
     throw createError({ statusCode: 500, message: error.message })
