@@ -1,662 +1,880 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+
+definePageMeta({ layout: false, auth: false })
+
+const root = ref<HTMLElement | null>(null)
+const email = ref('')
 
 useSeoMeta({
-  title: 'Sales Dashboard - Instagram DM Sales Workspace',
-  description: 'Overview of Instagram DM sales, conversion rate, pending payments, and recent orders.'
+  title: 'Plum — The order desk for Instagram sellers',
+  description:
+    'You sell in Instagram DMs. Plum turns every conversation into a trackable order — the buyer adds their own address, pays your UPI, and follows the status. No storefront, no catalog, no gateway.',
+  ogTitle: 'Instagram is your storefront. Plum keeps the orders straight.',
+  ogDescription:
+    'Plum turns DM conversations into organised, trackable orders. Built for thrift, handmade, jewellery and boutique sellers in India.'
 })
 
-// Focus Mode (Minimalist ADHD-friendly mode vs Full Analytics)
-const isFocusMode = ref(false)
-
-// Interactive Onboarding Checklist Steps
-const setupSteps = ref([
-  {
-    id: 1,
-    title: 'Connect Instagram Business Account',
-    description: 'Meta API linked for webhooks and DM sales workspace.',
-    completed: true,
-    link: '/settings',
-    linkText: 'Connected'
-  },
-  {
-    id: 2,
-    title: 'Receive Instagram DMs',
-    description: 'Incoming customer messages auto-synced to sales inbox.',
-    completed: true,
-    link: '/inbox',
-    linkText: 'View Inbox'
-  },
-  {
-    id: 3,
-    title: 'Create Order from Conversation',
-    description: 'Generate unique order link directly inside DM chat.',
-    completed: true,
-    link: '/inbox',
-    linkText: 'Create Order'
-  },
-  {
-    id: 4,
-    title: 'Verify Payment & Print Courier Label',
-    description: 'Check UPI screenshot / COD status and print shipping slip.',
-    completed: false,
-    link: '/orders',
-    linkText: 'Go to Orders'
-  }
-])
-
-const completedStepsCount = computed(() => setupSteps.value.filter(s => s.completed).length)
-const progressPercentage = computed(() => Math.round((completedStepsCount.value / setupSteps.value.length) * 100))
-
-// Seller Tiers (Based on completed order count)
-const sellerTiers = [
-  { name: 'Emerging Seller', minOrders: 0, badge: '🌱 Tier 1', color: 'neutral' },
-  { name: 'DM Pro', minOrders: 10, badge: '🥈 Tier 2', color: 'info' },
-  { name: 'Power Store', minOrders: 30, badge: '🥇 Tier 3', color: 'warning' },
-  { name: 'Instagram Elite', minOrders: 100, badge: '👑 Tier 4', color: 'success' }
-]
-
-const currentOrderCount = ref(32) // Mock completed orders
-const currentTier = computed(() => {
-  return [...sellerTiers].reverse().find(t => currentOrderCount.value >= t.minOrders) || sellerTiers[0]
+useHead({
+  link: [
+    { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+    { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+    {
+      rel: 'stylesheet',
+      href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'
+    }
+  ]
 })
 
-// Unlockable Achievement Badges
-const achievements = ref([
-  {
-    id: 'first_order',
-    title: 'First DM Order',
-    description: 'Created & sent your first DM order link',
-    icon: 'i-lucide-party-popper',
-    unlocked: true,
-    unlockedAt: 'Aug 16'
-  },
-  {
-    id: 'dm_converter',
-    title: 'Fast Converter',
-    description: 'Achieved 40%+ DM to Order conversion',
-    icon: 'i-lucide-zap',
-    unlocked: true,
-    unlockedAt: 'Aug 24'
-  },
-  {
-    id: 'power_store',
-    title: 'Power Store',
-    description: 'Crossed 30+ confirmed sales',
-    icon: 'i-lucide-award',
-    unlocked: true,
-    unlockedAt: 'Aug 29'
-  },
-  {
-    id: 'century_club',
-    title: '100 DM Club',
-    description: 'Fulfill 100 Instagram DM orders',
-    icon: 'i-lucide-crown',
-    unlocked: false,
-    unlockedAt: 'Locked'
-  }
-])
-
-const isStoryModalOpen = ref(false)
-const selectedShareBadge = ref<any>(null)
-
-function openShareBadgeModal(badge: any) {
-  selectedShareBadge.value = badge
-  isStoryModalOpen.value = true
+function goRegister() {
+  return navigateTo({ path: '/register', query: email.value ? { email: email.value } : {} })
 }
 
-// Metrics & Analytics
-const metrics = ref({
-  totalSales: 48500,
-  ordersCount: 32,
-  conversionRate: '42%',
-  pendingPaymentAmount: 3900,
-  pendingPaymentCount: 3,
-  activeDms: 8
+// Hero demo: a tabbed walk-through of the real workflow
+const demoTabs = [
+  { id: 'inbox', label: 'Inbox' },
+  { id: 'create', label: 'Create order' },
+  { id: 'link', label: 'Customer link' },
+  { id: 'orders', label: 'Orders' }
+]
+
+const demoChats = [
+  { initial: 'P', name: 'Priya Nair', handle: '@priya.thrifts', preview: 'Great — how do I pay?', active: true },
+  { initial: 'R', name: 'Rohan Das', handle: '@rohan.kicks', preview: 'Do you have the blue pair in 9?', active: false },
+  { initial: 'M', name: 'Meera Iqbal', handle: '@meera.ceramics', preview: 'Thank you! Just placed it', order: 'ORD-1074', active: false },
+  { initial: 'A', name: 'Aditya Rao', handle: '@aditya.vault', preview: 'Is the denim jacket still up?', active: false }
+]
+
+const demoKanban = [
+  {
+    title: 'Confirmed',
+    count: 4,
+    tone: 'bg-zinc-400/20 text-zinc-500 dark:text-zinc-400',
+    cards: [
+      { code: 'ORD-1086', price: '₹1,900', item: 'Denim jacket · L', name: 'Aditya Rao', handle: '@aditya.vault', initial: 'A' },
+      { code: 'ORD-1085', price: '₹640', item: 'Beaded hoop earrings', name: 'Sana Kapoor', handle: '@sana.makes', initial: 'S' }
+    ]
+  },
+  {
+    title: 'Awaiting payment',
+    count: 3,
+    tone: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    cards: [
+      { code: 'ORD-1084', price: '₹2,200', item: 'Retro sneakers · UK 9', name: 'Rohan Das', handle: '@rohan.kicks', initial: 'R' }
+    ]
+  },
+  {
+    title: 'Paid',
+    count: 5,
+    tone: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    cards: [
+      { code: 'ORD-1082', price: '₹1,450', item: 'Linen co-ord set · M', name: 'Priya Nair', handle: '@priya.thrifts', initial: 'P', active: true },
+      { code: 'ORD-1081', price: '₹990', item: 'Ceramic planter', name: 'Nikhil Sen', handle: '@nikhil.clay', initial: 'N' }
+    ]
+  },
+  {
+    title: 'Shipped',
+    count: 6,
+    tone: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+    cards: [
+      { code: 'ORD-1078', price: '₹1,900', item: 'Corduroy shirt · M', name: 'Farah Ali', handle: '@farah.thrift', initial: 'F' }
+    ]
+  },
+  {
+    title: 'Delivered',
+    count: 12,
+    tone: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    cards: [
+      { code: 'ORD-1069', price: '₹890', item: 'Mug set of 2', name: 'Meera Iqbal', handle: '@meera.ceramics', initial: 'M' }
+    ]
+  }
+]
+const activeTab = ref(0)
+const autoPaused = ref(false)
+const hovering = ref(false)
+let tabTimer: ReturnType<typeof setInterval> | null = null
+
+function pickTab(i: number) {
+  activeTab.value = i
+  autoPaused.value = true // a manual pick stops the auto-cycle for good
+}
+
+onMounted(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  tabTimer = setInterval(() => {
+    if (autoPaused.value || hovering.value || document.visibilityState !== 'visible') return
+    activeTab.value = (activeTab.value + 1) % demoTabs.length
+  }, 4600)
+})
+onUnmounted(() => {
+  if (tabTimer) clearInterval(tabTimer)
 })
 
-// Quick Recent Activity / Orders
-const recentOrders = ref([
-  {
-    id: 'ORD-1082',
-    handle: '@maria',
-    item: 'Nike Vintage Windbreaker Jacket',
-    price: 1500,
-    status: 'Confirmed',
-    paymentStatus: 'Pending',
-    time: '10 mins ago',
-    link: '/order/ORD-1082'
-  },
-  {
-    id: 'ORD-1079',
-    handle: '@priya_s',
-    item: 'Silk Slip Dress (Emerald)',
-    price: 2400,
-    status: 'Awaiting Payment',
-    paymentStatus: 'Pending',
-    time: '1 hour ago',
-    link: '/order/ORD-1079'
-  },
-  {
-    id: 'ORD-1076',
-    handle: '@marcus_c',
-    item: 'Raw Denim Jacket',
-    price: 3200,
-    status: 'Paid',
-    paymentStatus: 'Paid',
-    time: '3 hours ago',
-    link: '/order/ORD-1076'
-  },
-  {
-    id: 'ORD-1071',
-    handle: '@chloeb',
-    item: 'Chunky Knit Sweater',
-    price: 1800,
-    status: 'Shipped',
-    paymentStatus: 'Paid',
-    time: 'Yesterday',
-    link: '/order/ORD-1071'
-  }
-])
+const audience = [
+  'Thrift stores', 'Ceramic artists', 'Vintage clothing', 'Handmade jewellery',
+  'Custom portraits', 'Home bakers', 'Resin art', 'Crochet & knits',
+  'Beauty & botanicals', 'Sneaker resellers'
+]
 
-// Recent DM Activity
-const activeDmsList = ref([
+const pains = [
   {
-    id: 1,
-    name: 'Maria Santos',
-    handle: '@maria',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-    lastMessage: 'I\'ll take it.',
-    time: '10:24 AM',
-    hasOrder: true,
-    orderId: 'ORD-1082'
+    title: 'Confirmed buyers get buried',
+    body: 'By the time you\'re free to reply, the person who agreed to buy is thirty chats up. The sale goes cold.'
   },
   {
-    id: 2,
-    name: 'Rohan Gupta',
-    handle: '@rohan_g',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-    lastMessage: 'Is the leather jacket still available?',
-    time: 'Yesterday',
-    hasOrder: false
+    title: 'Payments you can\'t match',
+    body: 'A screenshot lands at midnight. You\'re in GPay working out whether the money actually arrived, and from whom.'
   },
   {
-    id: 4,
-    name: 'Aisha Khan',
-    handle: '@aisha_k',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100',
-    lastMessage: 'Can you send the order link for the boots?',
-    time: '2 hours ago',
-    hasOrder: false
+    title: 'Order details everywhere',
+    body: 'Size, quantity, COD or UPI — spread across five message bubbles, a voice note, and your memory.'
+  },
+  {
+    title: 'Addresses asked twice',
+    body: 'You ask again to be safe. It still ships to the wrong pincode and the parcel comes back.'
   }
-])
+]
+
+const steps = [
+  { title: 'Chat like you always do', body: 'A customer finds you on Instagram and messages you. Nothing about that changes.' },
+  { title: 'They decide to buy', body: 'Turn that conversation into an order right there — no storefront, no catalog to upload first.' },
+  { title: 'Send the order link', body: 'Add the item, price and payment option. Plum drops a unique link straight into the chat.' },
+  { title: 'They fill in the details', body: 'Name, phone and shipping address — typed by the buyer. No more typos, no more asking twice.' },
+  { title: 'Pay on UPI, or pick COD', body: 'They pay straight to your UPI and attach the proof, or simply choose cash on delivery.' },
+  { title: 'You run the order', body: 'Verify payment, update the status, print a 4×6 label, ship it. Everything on one screen.' }
+]
+
+const diffs = [
+  { title: 'No product catalog', body: 'Never upload 200 products before your first sale. An order exists only when someone actually buys.' },
+  { title: 'Instagram stays your storefront', body: 'Keep posting Reels, Stories and photos. Keep talking in DMs. Plum sits quietly behind it.' },
+  { title: 'No AI guessing your orders', body: 'You decide when a conversation becomes an order — nothing gets mistaken for a sale by an algorithm.' },
+  { title: 'UPI + COD, built in', body: 'Buyers pay straight to your UPI or choose COD. No payment gateway, no per-order cut.' }
+]
+
+const faqs = [
+  {
+    label: 'Do I need to upload a product catalog?',
+    content: 'No. An order is created only when someone actually buys — your Instagram feed already is your catalog. There is nothing to set up before your first sale.'
+  },
+  {
+    label: 'Do my customers need an app or an account?',
+    content: 'No. They open the order link, add their name and address once, pay or choose COD, and can reopen the same link any time to check the status.'
+  },
+  {
+    label: 'Is there a payment gateway, or a cut on each order?',
+    content: 'Neither. Buyers pay straight to your UPI and attach the screenshot, or choose cash on delivery. You mark the order paid. Every rupee is yours.'
+  },
+  {
+    label: 'Does Plum read my DMs or decide what counts as an order?',
+    content: 'No. You decide when a conversation becomes an order. Nothing is auto-detected, and no algorithm turns a "how much?" into a sale.'
+  },
+  {
+    label: 'Can I keep selling exactly the way I do now?',
+    content: 'Yes. Keep posting Reels and Stories, keep chatting in DMs. Plum only steps in once someone is ready to buy.'
+  },
+  {
+    label: 'What about shipping and courier labels?',
+    content: 'Copy the address into any courier app in one tap, or print a 4×6 label from the order. Plum never locks you to a single courier.'
+  }
+]
+
+const beforeList = ['47 unread DMs', 'Notes-app chaos', 'UPI screenshots in your gallery', 'Address… somewhere', 'Your memory', 'A 2 a.m. spreadsheet']
+const afterList = ['One order link per buyer', 'Payment proof attached to the order', 'Address collected once, cleanly', 'A status the buyer can check themselves']
+
+let cleanupReveal: (() => void) | null = null
+
+onMounted(() => {
+  const el = root.value
+  if (!el) return
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (reduce || !('IntersectionObserver' in window)) return // content stays visible
+
+  const items = Array.from(el.querySelectorAll<HTMLElement>('[data-reveal]'))
+  el.classList.add('reveal-ready')
+
+  const reveal = (target: Element) => target.classList.add('reveal-in')
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          reveal(entry.target)
+          io.unobserve(entry.target)
+        }
+      })
+    },
+    { threshold: 0, rootMargin: '0px 0px -8% 0px' }
+  )
+
+  // Failsafe: never leave a section permanently hidden if a fast scroll or an
+  // in-page anchor jump outruns the observer.
+  const sweep = () => {
+    const limit = window.innerHeight * 0.92
+    for (const item of items) {
+      if (item.classList.contains('reveal-in')) continue
+      if (item.getBoundingClientRect().top < limit) {
+        reveal(item)
+        io.unobserve(item)
+      }
+    }
+  }
+
+  requestAnimationFrame(() => {
+    items.forEach((item) => io.observe(item))
+    sweep()
+  })
+
+  // A tab that loads in the background gets no rAF/IntersectionObserver ticks;
+  // re-run the sweep the moment it becomes visible so nothing stays hidden.
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') sweep()
+  }
+
+  window.addEventListener('scroll', sweep, { passive: true })
+  window.addEventListener('resize', sweep, { passive: true })
+  document.addEventListener('visibilitychange', onVisible)
+  cleanupReveal = () => {
+    io.disconnect()
+    window.removeEventListener('scroll', sweep)
+    window.removeEventListener('resize', sweep)
+    document.removeEventListener('visibilitychange', onVisible)
+  }
+})
+
+onUnmounted(() => cleanupReveal?.())
 </script>
 
 <template>
-  <div class="p-4 md:p-6 space-y-6">
-    <!-- Top Welcome Banner -->
-    <div class="p-6 rounded-2xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-default flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-2">
-          <UIcon name="i-simple-icons-instagram" class="size-6 text-pink-500" />
-          <h2 class="text-xl font-bold text-highlighted">Instagram Sales Overview</h2>
-        </div>
-        <p class="text-sm text-dimmed mt-1">
-          Turn Instagram DMs into organized orders. <strong>No storefront or catalog needed.</strong>
-        </p>
-      </div>
-
-      <div class="flex items-center gap-3 shrink-0 flex-wrap">
-        <!-- Focus Mode Toggle Switch -->
-        <div class="flex items-center gap-2 p-1.5 rounded-xl border border-default bg-background">
-          <button
-            type="button"
-            @click="isFocusMode = !isFocusMode"
-            :class="[
-              'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-              isFocusMode ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
-            ]"
-          >
-            <span
-              :class="[
-                'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                isFocusMode ? 'translate-x-4' : 'translate-x-0'
-              ]"
-            />
-          </button>
-          <span class="text-xs font-bold text-highlighted flex items-center gap-1">
-            <UIcon name="i-lucide-sparkles" class="size-3.5 text-amber-500" />
-            Focus Mode
-          </span>
-        </div>
-
-        <UButton
-          to="/inbox"
-          label="Open Sales DM Inbox"
-          icon="i-lucide-message-square"
-          color="primary"
-          size="md"
-          class="font-bold cursor-pointer shadow-xs"
-        />
-        <UButton
-          to="/orders"
-          label="View Orders"
-          icon="i-lucide-shopping-bag"
-          color="neutral"
-          variant="outline"
-          size="md"
-          class="cursor-pointer"
-        />
-      </div>
+  <div ref="root" class="landing min-h-dvh bg-[#f7f5f1] text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+    <!-- Soft wash behind the hero -->
+    <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[760px] overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-violet-200/70 via-fuchsia-100/30 to-transparent dark:from-violet-600/15 dark:via-fuchsia-600/[0.06] dark:to-transparent" />
+      <div class="absolute -top-40 left-1/2 size-[46rem] -translate-x-1/2 rounded-full bg-violet-300/30 blur-3xl dark:bg-violet-700/15" />
     </div>
 
-    <!-- MINIMALIST FOCUS MODE VIEW (Clean, distraction-free view with zero noise) -->
-    <div v-if="isFocusMode" class="p-8 rounded-2xl border border-primary/30 bg-primary/5 text-center space-y-6 max-w-2xl mx-auto my-6 shadow-sm">
-      <div class="size-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-        <UIcon name="i-lucide-sparkles" class="size-8" />
-      </div>
+    <div class="relative">
+      <!-- Header -->
+      <header class="sticky top-0 z-40 border-b border-black/[0.06] bg-[#f7f5f1]/80 backdrop-blur-md dark:border-white/[0.06] dark:bg-zinc-950/80">
+        <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+          <NuxtLink to="/" class="flex items-center gap-2.5">
+            <span class="flex size-7 items-center justify-center rounded-lg bg-violet-600 text-sm font-black text-white">P</span>
+            <span class="font-display text-xl font-semibold tracking-tight">Plum</span>
+          </NuxtLink>
 
-      <div class="space-y-1">
-        <h3 class="text-xl font-extrabold text-highlighted">Focus Mode Active</h3>
-        <p class="text-xs text-dimmed">Distraction-free workspace. Zero analytics noise, metrics, or cluttered charts.</p>
-      </div>
+          <nav class="hidden items-center gap-8 text-sm font-medium text-zinc-500 dark:text-zinc-400 md:flex">
+            <a href="#problem" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">The problem</a>
+            <a href="#how" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">How it works</a>
+            <a href="#why" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Why Plum</a>
+            <a href="#faq" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">FAQ</a>
+          </nav>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-        <!-- Action 1: Inbox -->
-        <NuxtLink to="/inbox" class="p-5 rounded-xl border border-default bg-background hover:border-primary transition-all space-y-2 group">
-          <div class="flex items-center justify-between">
-            <UIcon name="i-simple-icons-instagram" class="size-6 text-pink-500" />
-            <UBadge color="primary" variant="subtle" size="xs">8 Active DMs</UBadge>
-          </div>
-          <h4 class="font-bold text-sm text-highlighted group-hover:text-primary">1. Reply & Create Orders</h4>
-          <p class="text-xs text-dimmed">Chat with buyers in DM & generate 1-click order links.</p>
-        </NuxtLink>
-
-        <!-- Action 2: Orders -->
-        <NuxtLink to="/orders" class="p-5 rounded-xl border border-default bg-background hover:border-primary transition-all space-y-2 group">
-          <div class="flex items-center justify-between">
-            <UIcon name="i-lucide-shopping-bag" class="size-6 text-emerald-500" />
-            <UBadge color="warning" variant="subtle" size="xs">3 Pending Payment</UBadge>
-          </div>
-          <h4 class="font-bold text-sm text-highlighted group-hover:text-primary">2. Fulfill Orders & Print Slips</h4>
-          <p class="text-xs text-dimmed">Verify UPI payments & print 4x6 courier labels.</p>
-        </NuxtLink>
-      </div>
-    </div>
-
-    <!-- STANDARD FULL DASHBOARD VIEW (Checklists + Metrics + Tables) -->
-    <template v-else>
-      <!-- Seller Onboarding & Flow Progress Checklist -->
-      <div class="p-5 rounded-2xl border border-default bg-background space-y-4 shadow-xs">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 class="font-bold text-base text-highlighted flex items-center gap-2">
-            <UIcon name="i-lucide-list-checks" class="size-5 text-primary" />
-            Seller Setup & Sales Flow Progress
-          </h3>
-          <p class="text-xs text-dimmed mt-0.5">Complete these core steps to start turning Instagram DMs into fulfilled sales.</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <div class="text-right">
-            <span class="text-xs font-bold text-highlighted">{{ completedStepsCount }} of {{ setupSteps.length }} Completed</span>
-            <p class="text-[10px] text-dimmed">{{ progressPercentage }}% Setup Progress</p>
-          </div>
-          <UBadge color="primary" variant="subtle" size="md" class="font-bold">
-            {{ progressPercentage }}%
-          </UBadge>
-        </div>
-      </div>
-
-      <!-- Progress Bar -->
-      <div class="w-full bg-neutral-100 dark:bg-neutral-800 h-2 rounded-full overflow-hidden">
-        <div
-          class="bg-primary h-full transition-all duration-500 rounded-full"
-          :style="{ width: `${progressPercentage}%` }"
-        ></div>
-      </div>
-
-      <!-- Checklist Items Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
-        <div
-          v-for="step in setupSteps"
-          :key="step.id"
-          :class="[
-            'p-3.5 rounded-xl border transition-all flex flex-col justify-between space-y-2',
-            step.completed
-              ? 'border-emerald-500/30 bg-emerald-500/5'
-              : 'border-primary/40 bg-primary/5 ring-1 ring-primary/20'
-          ]"
-        >
-          <div class="flex items-start gap-2.5">
-            <button
-              type="button"
-              @click="step.completed = !step.completed"
-              :class="[
-                'size-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all cursor-pointer text-xs font-bold',
-                step.completed ? 'bg-emerald-500 text-white' : 'border-2 border-primary text-transparent hover:border-primary/80'
-              ]"
-            >
-              ✓
-            </button>
-            <div class="space-y-0.5">
-              <h4 :class="['text-xs font-bold leading-tight', step.completed ? 'line-through text-dimmed' : 'text-highlighted']">
-                {{ step.id }}. {{ step.title }}
-              </h4>
-              <p class="text-[11px] text-dimmed leading-snug">{{ step.description }}</p>
-            </div>
-          </div>
-
-          <div class="pt-2 flex justify-between items-center border-t border-default/50 text-[11px]">
-            <span :class="step.completed ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-500 font-medium'">
-              {{ step.completed ? 'Step Completed' : 'Action Required' }}
-            </span>
-            <NuxtLink
-              :to="step.link"
-              class="text-primary font-bold hover:underline flex items-center gap-0.5"
-            >
-              {{ step.linkText }} →
+          <div class="flex items-center gap-1 sm:gap-2">
+            <UColorModeButton class="cursor-pointer" />
+            <NuxtLink to="/login" class="hidden rounded-lg px-3 py-2 text-sm font-semibold text-zinc-600 transition-colors hover:text-zinc-900 sm:block dark:text-zinc-300 dark:hover:text-white">
+              Log in
+            </NuxtLink>
+            <NuxtLink to="/register" class="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-violet-700">
+              Start free
             </NuxtLink>
           </div>
         </div>
-      </div>
+      </header>
 
-      <!-- SELLER TIER RANK & UNLOCKABLE ACHIEVEMENT BADGES -->
-      <div class="p-5 rounded-2xl border border-default bg-background space-y-4 shadow-xs">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-3">
-            <div class="size-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-extrabold text-xl shrink-0">
-              🏆
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="font-bold text-base text-highlighted">Seller Rank: {{ currentTier.name }}</h3>
-                <UBadge :color="currentTier.color" variant="subtle" size="xs" class="font-bold">
-                  {{ currentTier.badge }}
-                </UBadge>
-              </div>
-              <p class="text-xs text-dimmed mt-0.5">
-                Processed <strong>{{ currentOrderCount }} DM Orders</strong> • Next Rank: <strong>Instagram Elite</strong> at 100 Orders
-              </p>
-            </div>
-          </div>
+      <!-- Hero -->
+      <section class="relative mx-auto max-w-3xl px-4 pt-16 pb-10 text-center sm:px-6 sm:pt-24">
+        <!-- Hand-drawn doodles -->
+        <svg aria-hidden="true" class="absolute left-[3%] top-[24%] hidden w-14 -rotate-[8deg] text-zinc-300 lg:block dark:text-zinc-700" viewBox="0 0 48 42" fill="none">
+          <path d="M4 8c0-3 3-5 6-5h28c3 0 6 2 6 5v17c0 3-3 5-6 5H15l-8 7 1-7c-3 0-4-2-4-5z" stroke="currentColor" stroke-width="2.5" />
+          <path d="M15 17c3 3.5 15 3.5 18 0" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+        <svg aria-hidden="true" class="absolute left-[12%] top-[52%] hidden w-16 text-zinc-300 xl:block dark:text-zinc-700" viewBox="0 0 80 76" fill="none">
+          <path d="M70 8C44 20 34 40 60 66" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          <path d="M48 60l12 8 4-16" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <div aria-hidden="true" class="absolute right-[5%] top-[22%] hidden -rotate-[8deg] text-pink-500 lg:block">
+          <span class="text-2xl font-extrabold italic tracking-tight">finally.</span>
+        </div>
+        <svg aria-hidden="true" class="absolute right-[16%] top-[54%] hidden w-6 text-violet-400 lg:block dark:text-violet-500" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2v20M4 4l16 16M20 4L4 20M2 12h20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+        </svg>
 
-          <div class="flex items-center gap-2 text-xs">
-            <span class="text-dimmed">Level Progress:</span>
-            <div class="w-32 bg-neutral-100 dark:bg-neutral-800 h-2 rounded-full overflow-hidden">
-              <div class="bg-amber-500 h-full rounded-full" style="width: 32%"></div>
-            </div>
-            <span class="font-bold text-highlighted">32%</span>
-          </div>
+        <p class="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/70 px-3.5 py-1.5 text-xs font-semibold text-zinc-600 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
+          <UIcon name="i-simple-icons-instagram" class="size-3.5 text-pink-500" />
+          For thrift, handmade, jewellery &amp; boutique sellers
+        </p>
+
+        <h1 data-reveal class="font-display mx-auto mt-6 max-w-[19ch] text-[2.7rem] font-bold leading-[1.05] tracking-[-0.03em] text-balance sm:text-6xl sm:leading-[1.02]">
+          Every Instagram order, in
+          <span class="relative whitespace-nowrap">
+            one place.
+            <svg class="squiggle absolute -bottom-1.5 left-0 w-full text-pink-500" viewBox="0 0 220 14" fill="none" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M3 8c26-9 52 5 79-1s52-8 79-1 39 7 56 2" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+            </svg>
+          </span>
+        </h1>
+
+        <p data-reveal class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-600 text-pretty dark:text-zinc-300" style="transition-delay: 60ms">
+          You sell in Instagram DMs — no catalog, no checkout page. Plum turns each conversation into a
+          trackable order the buyer fills in, pays for on UPI, and follows themselves.
+        </p>
+
+        <div data-reveal class="mt-9" style="transition-delay: 120ms">
+          <form
+            class="mx-auto flex w-full max-w-md flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-2 sm:rounded-full sm:border sm:border-black/10 sm:bg-white sm:p-1.5 sm:pl-5 sm:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(80,40,160,0.25)] dark:sm:border-white/10 dark:sm:bg-zinc-900"
+            @submit.prevent="goRegister"
+          >
+            <label for="hero-email" class="sr-only">Your email</label>
+            <input
+              id="hero-email"
+              v-model="email"
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              placeholder="you@yourstore.com"
+              class="min-w-0 flex-1 rounded-full border border-black/10 bg-white px-5 py-3 text-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-violet-400 sm:border-0 sm:bg-transparent sm:p-0 sm:text-base sm:focus:border-0 dark:border-white/10 dark:bg-zinc-900 dark:sm:bg-transparent"
+            >
+            <button
+              type="submit"
+              class="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
+            >
+              Start free
+              <UIcon name="i-lucide-arrow-right" class="size-4" />
+            </button>
+          </form>
+          <p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+            Free to start · no card · your UPI, your couriers ·
+            <a href="#how" class="font-semibold text-violet-600 hover:underline dark:text-violet-400">see how it works ↓</a>
+          </p>
         </div>
 
-        <!-- Unlockable Badges Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-default/60">
-          <div
-            v-for="badge in achievements"
-            :key="badge.id"
-            :class="[
-              'p-3 rounded-xl border transition-all flex flex-col justify-between space-y-2 relative',
-              badge.unlocked
-                ? 'border-amber-500/40 bg-amber-500/5'
-                : 'border-default bg-elevated/10 opacity-60'
-            ]"
-          >
-            <div class="flex items-start gap-2.5">
+        <!-- Product frame: tabbed walk-through of the real workflow -->
+        <div
+          data-reveal
+          class="relative mx-auto mt-14 max-w-5xl"
+          style="transition-delay: 160ms"
+          @mouseenter="hovering = true"
+          @mouseleave="hovering = false"
+        >
+          <div class="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_24px_70px_-20px_rgba(80,40,160,0.35)] dark:border-white/10 dark:bg-zinc-900">
+            <!-- Window bar + workflow tabs -->
+            <div class="flex items-end gap-3 border-b border-black/[0.06] bg-zinc-50/80 px-3 pt-2.5 dark:border-white/[0.06] dark:bg-zinc-950/50">
+              <div class="flex shrink-0 gap-1.5 pb-3 pl-1">
+                <span class="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                <span class="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                <span class="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+              </div>
+              <div class="scrollbar-none flex min-w-0 flex-1 gap-1 overflow-x-auto">
+                <button
+                  v-for="(t, i) in demoTabs"
+                  :key="t.id"
+                  type="button"
+                  :aria-current="activeTab === i ? 'true' : undefined"
+                  class="relative shrink-0 cursor-pointer whitespace-nowrap rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors"
+                  :class="activeTab === i
+                    ? 'bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100'
+                    : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'"
+                  @click="pickTab(i)"
+                >
+                  <span class="mr-1.5 text-[10px] font-bold text-violet-400">{{ String(i + 1).padStart(2, '0') }}</span>{{ t.label }}
+                  <span
+                    v-if="activeTab === i && !autoPaused"
+                    :key="'progress-' + activeTab"
+                    aria-hidden="true"
+                    class="tab-progress absolute inset-x-0 -bottom-px h-0.5 origin-left bg-violet-500"
+                  />
+                </button>
+              </div>
+            </div>
+
+            <!-- Panels -->
+            <div class="relative h-[458px] overflow-hidden bg-white text-left text-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 sm:h-[478px]">
+
+              <!-- 01 · Inbox -->
               <div
-                :class="[
-                  'size-8 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold',
-                  badge.unlocked ? 'bg-amber-500 text-white shadow-xs' : 'bg-neutral-200 dark:bg-neutral-800 text-dimmed'
-                ]"
+                class="tabpanel absolute inset-0 flex h-full"
+                :class="activeTab === 0 ? 'opacity-100' : 'pointer-events-none opacity-0'"
+                :inert="activeTab !== 0"
               >
-                <UIcon :name="badge.icon" class="size-4" />
+                    <div class="hidden w-56 shrink-0 flex-col border-r border-black/[0.06] bg-zinc-50/60 sm:flex dark:border-white/[0.06] dark:bg-zinc-950/40">
+                      <div class="flex items-center gap-1.5 border-b border-black/[0.06] px-3 py-2.5 dark:border-white/[0.06]">
+                        <UIcon name="i-simple-icons-instagram" class="size-4 text-pink-500" />
+                        <span class="text-xs font-bold">Instagram Sales DM</span>
+                      </div>
+                      <div class="flex-1 overflow-hidden">
+                        <div
+                          v-for="c in demoChats"
+                          :key="c.handle"
+                          class="flex gap-2.5 px-3 py-2.5 text-xs"
+                          :class="c.active ? 'border-l-2 border-violet-500 bg-white dark:bg-zinc-900' : 'border-l-2 border-transparent'"
+                        >
+                          <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-violet-500 text-[10px] font-bold text-white">{{ c.initial }}</span>
+                          <div class="min-w-0 flex-1">
+                            <p class="truncate font-semibold">{{ c.name }} <span class="font-normal text-zinc-400">{{ c.handle }}</span></p>
+                            <p class="truncate text-zinc-400">{{ c.preview }}</p>
+                          </div>
+                          <span v-if="c.order" class="mt-0.5 shrink-0 rounded bg-emerald-500/15 px-1 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">{{ c.order }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex min-w-0 flex-1 flex-col">
+                      <div class="flex items-center gap-2.5 border-b border-black/[0.06] px-4 py-2.5 dark:border-white/[0.06]">
+                        <span class="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-violet-500 text-xs font-bold text-white">P</span>
+                        <div class="min-w-0 flex-1">
+                          <p class="text-sm font-bold">Priya Nair <span class="text-xs font-normal text-zinc-400">@priya.thrifts</span></p>
+                          <p class="text-[11px] font-medium text-emerald-500">Customer via Instagram DM</p>
+                        </div>
+                        <span class="hidden rounded-lg border border-black/10 px-2.5 py-1.5 text-[11px] font-semibold sm:inline dark:border-white/15">Message on IG</span>
+                        <span class="rounded-lg bg-violet-600 px-3 py-1.5 text-[11px] font-bold text-white">+ Order</span>
+                      </div>
+                      <div class="flex-1 space-y-2.5 overflow-hidden p-4">
+                        <div class="mr-auto max-w-[80%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3.5 py-2 text-xs dark:bg-zinc-800">Hi! Is the linen co-ord set still available in M?</div>
+                        <div class="ml-auto max-w-[80%] rounded-2xl rounded-tr-sm bg-violet-600 px-3.5 py-2 text-xs text-white">Yes it is — ₹1,450 including shipping.</div>
+                        <div class="mr-auto max-w-[80%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3.5 py-2 text-xs dark:bg-zinc-800">Great — how do I pay?</div>
+                      </div>
+                      <div class="space-y-2 border-t border-black/[0.06] p-3 dark:border-white/[0.06]">
+                        <div class="scrollbar-none flex gap-1.5 overflow-x-auto text-[10px]">
+                          <span class="shrink-0 rounded-full border border-black/10 px-2 py-1 text-zinc-500 dark:border-white/15">📦 In stock?</span>
+                          <span class="shrink-0 rounded-full border border-black/10 px-2 py-1 text-zinc-500 dark:border-white/15">🚚 Delivery time</span>
+                          <span class="shrink-0 rounded-full border border-pink-500/30 bg-pink-500/10 px-2 py-1 font-semibold text-pink-600 dark:text-pink-400">⚡ Create order link</span>
+                        </div>
+                        <div class="flex items-center gap-2 rounded-full border border-black/10 px-3.5 py-2 text-xs text-zinc-400 dark:border-white/15">
+                          Type a reply…
+                          <span class="ml-auto flex size-6 items-center justify-center rounded-full bg-violet-600 text-white"><UIcon name="i-lucide-send" class="size-3" /></span>
+                        </div>
+                      </div>
+                    </div>
               </div>
-              <div class="min-w-0">
-                <h4 class="text-xs font-bold text-highlighted leading-tight truncate flex items-center gap-1">
-                  {{ badge.title }}
-                  <span v-if="badge.unlocked" class="text-[10px] text-amber-500">✓</span>
-                </h4>
-                <p class="text-[11px] text-dimmed leading-snug mt-0.5">{{ badge.description }}</p>
+
+              <!-- 02 · Create order -->
+              <div
+                class="tabpanel absolute inset-0 flex h-full items-center justify-center bg-zinc-50/70 p-5 dark:bg-zinc-950/30"
+                :class="activeTab === 1 ? 'opacity-100' : 'pointer-events-none opacity-0'"
+                :inert="activeTab !== 1"
+              >
+                    <div class="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-900">
+                      <p class="text-sm font-bold">Create order from DM</p>
+                      <p class="mt-0.5 text-[11px] text-zinc-400">Turn a confirmed DM into a tracked order link.</p>
+
+                      <div class="mt-4 flex items-center justify-between rounded-lg border border-black/[0.06] bg-zinc-50 px-3 py-2 text-xs dark:border-white/[0.06] dark:bg-zinc-800/50">
+                        <span class="text-zinc-400">Customer</span>
+                        <span class="font-semibold">Priya Nair · @priya.thrifts</span>
+                      </div>
+
+                      <div class="mt-3 space-y-2.5">
+                        <div>
+                          <p class="mb-1 text-[11px] font-semibold text-zinc-500">Item name</p>
+                          <div class="rounded-lg border border-black/10 px-3 py-2 text-xs dark:border-white/15">Linen co-ord set</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                          <div>
+                            <p class="mb-1 text-[11px] font-semibold text-zinc-500">Variant</p>
+                            <div class="rounded-lg border border-black/10 px-3 py-2 text-xs dark:border-white/15">M / Sage</div>
+                          </div>
+                          <div>
+                            <p class="mb-1 text-[11px] font-semibold text-zinc-500">Price (₹)</p>
+                            <div class="rounded-lg border border-black/10 px-3 py-2 text-xs dark:border-white/15">1,450</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="mt-4 rounded-lg bg-violet-600 py-2.5 text-center text-xs font-bold text-white">Generate &amp; send order link</div>
+
+                      <div class="mt-3 flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                        <UIcon name="i-lucide-check" class="size-3.5 shrink-0" />
+                        Link sent in the DM · plum.so/order/ORD-1082
+                      </div>
+                    </div>
               </div>
-            </div>
 
-            <div class="pt-2 flex justify-between items-center border-t border-default/50 text-[10px]">
-              <span :class="badge.unlocked ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-dimmed'">
-                {{ badge.unlocked ? `Unlocked ${badge.unlockedAt}` : '🔒 Locked' }}
-              </span>
-
-              <button
-                v-if="badge.unlocked"
-                type="button"
-                @click="openShareBadgeModal(badge)"
-                class="text-primary font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+              <!-- 03 · Customer link -->
+              <div
+                class="tabpanel absolute inset-0 h-full overflow-hidden bg-zinc-100/70 p-4 dark:bg-zinc-950/50"
+                :class="activeTab === 2 ? 'opacity-100' : 'pointer-events-none opacity-0'"
+                :inert="activeTab !== 2"
               >
-                Share to IG Story 📲
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                    <div class="mx-auto flex h-full max-w-xs flex-col gap-2.5 overflow-hidden">
+                      <div class="text-center">
+                        <span class="mx-auto flex size-11 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-violet-600 text-sm font-bold text-white">RT</span>
+                        <p class="mt-1 text-sm font-bold">Retro Thrift Store</p>
+                        <p class="text-[10px] text-zinc-400">Instagram Sales Order #ORD-1082</p>
+                      </div>
 
-    <!-- 4 KPI Metrics Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- Total Sales -->
-      <div class="p-5 bg-background border border-default rounded-xl space-y-2">
-        <div class="flex items-center justify-between text-muted">
-          <span class="text-xs font-medium">Total DM Sales</span>
-          <UIcon name="i-lucide-indian-rupee" class="size-4 text-emerald-500" />
-        </div>
-        <div class="flex items-baseline gap-2">
-          <span class="text-2xl font-extrabold text-highlighted">₹{{ metrics.totalSales.toLocaleString('en-IN') }}</span>
-          <span class="text-xs font-semibold text-emerald-500">+18% this week</span>
-        </div>
-        <p class="text-[11px] text-dimmed">{{ metrics.ordersCount }} confirmed DM orders</p>
-      </div>
+                      <div class="flex items-center justify-between rounded-xl border border-black/10 bg-white px-3.5 py-2.5 dark:border-white/10 dark:bg-zinc-900">
+                        <div>
+                          <p class="text-xs font-bold">Linen co-ord set</p>
+                          <span class="text-[10px] text-zinc-400">Variant: M / Sage</span>
+                        </div>
+                        <span class="text-sm font-extrabold">₹1,450</span>
+                      </div>
 
-      <!-- Pending Payment -->
-      <div class="p-5 bg-background border border-default rounded-xl space-y-2">
-        <div class="flex items-center justify-between text-muted">
-          <span class="text-xs font-medium text-amber-500">Awaiting Payment</span>
-          <UIcon name="i-lucide-clock" class="size-4 text-amber-500" />
-        </div>
-        <div class="flex items-baseline gap-2">
-          <span class="text-2xl font-extrabold text-amber-500">₹{{ metrics.pendingPaymentAmount.toLocaleString('en-IN') }}</span>
-          <span class="text-xs text-dimmed">({{ metrics.pendingPaymentCount }} orders)</span>
-        </div>
-        <p class="text-[11px] text-dimmed">Buyers created link, payment pending</p>
-      </div>
+                      <div class="flex-1 space-y-2 overflow-hidden rounded-xl border border-black/10 bg-white p-3.5 dark:border-white/10 dark:bg-zinc-900">
+                        <p class="text-[11px] font-bold">Delivery &amp; payment</p>
+                        <div class="rounded-lg border border-black/10 px-2.5 py-1.5 text-[11px] dark:border-white/15">Priya Nair · 98••• ••471</div>
+                        <div class="rounded-lg border border-black/10 px-2.5 py-1.5 text-[11px] text-zinc-400 dark:border-white/15">14 Carter Road, Bandra W, Mumbai — 400050</div>
+                        <div class="grid grid-cols-2 gap-2">
+                          <div class="rounded-lg border-2 border-violet-500 bg-violet-500/5 px-2 py-1.5 text-center">
+                            <p class="text-[11px] font-bold">Pay now</p>
+                            <p class="text-[9px] text-zinc-400">UPI / Scan QR</p>
+                          </div>
+                          <div class="rounded-lg border border-black/10 px-2 py-1.5 text-center dark:border-white/15">
+                            <p class="text-[11px] font-bold">Cash on delivery</p>
+                            <p class="text-[9px] text-zinc-400">Pay when delivered</p>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2.5 rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/50">
+                          <svg viewBox="0 0 100 100" class="size-10 shrink-0 text-zinc-900 dark:text-zinc-100" aria-hidden="true">
+                            <path fill="currentColor" d="M0 0h30v30H0zM40 0h10v10H40zM60 0h10v10H60zM70 0h30v30H70zM10 10h10v10H10zM80 10h10v10H80zM0 40h10v10H0zM20 40h20v10H20zM50 40h10v10H50zM70 40h20v10H70zM0 60h10v10H0zM30 60h10v10H30zM50 60h20v10H50zM80 60h20v10H80zM0 70h30v30H0zM40 70h20v10H40zM70 70h30v30H70zM10 80h10v10H10zM80 80h10v10H80z" />
+                          </svg>
+                          <div class="text-[10px]">
+                            <p class="font-bold">Scan to pay ₹1,450</p>
+                            <p class="font-mono text-zinc-400">retrothrift@upi</p>
+                          </div>
+                        </div>
+                        <div class="rounded-lg bg-violet-600 py-2 text-center text-[11px] font-bold text-white">Upload receipt &amp; confirm</div>
+                      </div>
+                    </div>
+              </div>
 
-      <!-- DM Conversion Rate -->
-      <div class="p-5 bg-background border border-default rounded-xl space-y-2">
-        <div class="flex items-center justify-between text-muted">
-          <span class="text-xs font-medium">DM → Order Conversion</span>
-          <UIcon name="i-lucide-trending-up" class="size-4 text-indigo-500" />
-        </div>
-        <div class="flex items-baseline gap-2">
-          <span class="text-2xl font-extrabold text-highlighted">{{ metrics.conversionRate }}</span>
-          <span class="text-xs text-emerald-500 font-semibold">High intent</span>
-        </div>
-        <p class="text-[11px] text-dimmed">DMs converted into order links</p>
-      </div>
-
-      <!-- Active Instagram DMs -->
-      <div class="p-5 bg-background border border-default rounded-xl space-y-2">
-        <div class="flex items-center justify-between text-muted">
-          <span class="text-xs font-medium">Active Sales DMs</span>
-          <UIcon name="i-simple-icons-instagram" class="size-4 text-pink-500" />
-        </div>
-        <div class="flex items-baseline gap-2">
-          <span class="text-2xl font-extrabold text-highlighted">{{ metrics.activeDms }}</span>
-          <span class="text-xs text-pink-500 font-semibold">Unreplied / In progress</span>
-        </div>
-        <p class="text-[11px] text-dimmed">Meta Webhook live connected</p>
-      </div>
-    </div>
-
-    <!-- Main Content Grid (Recent Orders & Active Sales DMs) -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
-      <!-- Recent DM Orders Table (2 Cols) -->
-      <div class="lg:col-span-2 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-base text-highlighted flex items-center gap-2">
-            <UIcon name="i-lucide-shopping-bag" class="size-4 text-primary" />
-            Recent DM Orders
-          </h3>
-          <NuxtLink to="/orders" class="text-xs text-primary font-semibold hover:underline">
-            View All Orders →
-          </NuxtLink>
-        </div>
-
-        <div class="border border-default rounded-xl overflow-hidden bg-background">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-elevated/50 border-b border-default text-muted uppercase font-semibold">
-              <tr>
-                <th class="p-3">Order ID</th>
-                <th class="p-3">Customer</th>
-                <th class="p-3">Item</th>
-                <th class="p-3">Price</th>
-                <th class="p-3">Status</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-default">
-              <tr
-                v-for="ord in recentOrders"
-                :key="ord.id"
-                class="hover:bg-elevated/20 transition-colors"
+              <!-- 04 · Orders (Kanban board) -->
+              <div
+                class="tabpanel absolute inset-0 h-full overflow-hidden p-4 sm:p-5"
+                :class="activeTab === 3 ? 'opacity-100' : 'pointer-events-none opacity-0'"
+                :inert="activeTab !== 3"
               >
-                <td class="p-3 font-mono font-bold text-highlighted">
-                  <NuxtLink :to="ord.link" class="hover:underline text-primary">
-                    {{ ord.id }}
-                  </NuxtLink>
-                </td>
-                <td class="p-3 font-medium text-highlighted">
-                  {{ ord.handle }}
-                </td>
-                <td class="p-3 text-dimmed truncate max-w-[150px]">
-                  {{ ord.item }}
-                </td>
-                <td class="p-3 font-bold text-highlighted">
-                  ₹{{ ord.price.toLocaleString('en-IN') }}
-                </td>
-                <td class="p-3">
-                  <UBadge
-                    :color="ord.status === 'Paid' ? 'success' : ord.status === 'Awaiting Payment' ? 'warning' : 'neutral'"
-                    variant="subtle"
-                    size="xs"
-                  >
-                    {{ ord.status }}
-                  </UBadge>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Quick Sales Inbox Sidebar (1 Col) -->
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-base text-highlighted flex items-center gap-2">
-            <UIcon name="i-lucide-message-square" class="size-4 text-pink-500" />
-            Live Instagram DMs
-          </h3>
-          <NuxtLink to="/inbox" class="text-xs text-primary font-semibold hover:underline">
-            Open Inbox →
-          </NuxtLink>
-        </div>
-
-        <div class="border border-default rounded-xl bg-background divide-y divide-default">
-          <div
-            v-for="dm in activeDmsList"
-            :key="dm.id"
-            class="p-3 flex items-center justify-between gap-2 hover:bg-elevated/20 transition-colors"
-          >
-            <div class="flex items-center gap-3 min-w-0">
-              <UAvatar :src="dm.avatar" :alt="dm.name" size="sm" />
-              <div class="min-w-0">
-                <div class="flex items-center gap-1">
-                  <span class="font-bold text-xs text-highlighted truncate">{{ dm.name }}</span>
-                  <span class="text-[10px] text-dimmed">{{ dm.handle }}</span>
+                <div class="flex items-center justify-between">
+                  <div class="flex rounded-lg border border-black/10 p-0.5 text-[10px] font-semibold dark:border-white/15">
+                    <span class="rounded-md px-2 py-1 text-zinc-400">Table</span>
+                    <span class="rounded-md bg-white px-2 py-1 text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100">Kanban</span>
+                  </div>
+                  <span class="hidden text-[10px] text-zinc-400 sm:block">Drag a card to move it down the pipeline</span>
                 </div>
-                <p class="text-xs text-dimmed truncate">{{ dm.lastMessage }}</p>
+
+                <div class="scrollbar-none mt-3 flex h-[calc(100%-2.25rem)] gap-3 overflow-x-auto pb-1">
+                  <div
+                    v-for="col in demoKanban"
+                    :key="col.title"
+                    class="flex w-44 shrink-0 flex-col rounded-xl border border-black/[0.07] bg-zinc-50/70 dark:border-white/[0.06] dark:bg-zinc-950/40"
+                  >
+                    <div class="flex items-center gap-1.5 border-b border-black/[0.06] px-3 py-2 dark:border-white/[0.06]">
+                      <span class="text-[11px] font-bold">{{ col.title }}</span>
+                      <span class="rounded-full px-1.5 text-[10px] font-bold" :class="col.tone">{{ col.count }}</span>
+                    </div>
+                    <div class="flex-1 space-y-2 overflow-hidden p-2">
+                      <div
+                        v-for="card in col.cards"
+                        :key="card.code"
+                        class="rounded-lg border bg-white p-2.5 shadow-sm dark:bg-zinc-900"
+                        :class="card.active
+                          ? 'border-violet-400 ring-1 ring-violet-400/40 dark:border-violet-500'
+                          : 'border-black/10 dark:border-white/10'"
+                      >
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-[10px] font-bold text-violet-500">{{ card.code }}</span>
+                          <span class="text-[10px] font-bold">{{ card.price }}</span>
+                        </div>
+                        <p class="mt-1 text-[11px] font-semibold leading-snug">{{ card.item }}</p>
+                        <div class="mt-1.5 flex items-center gap-1.5 border-t border-black/[0.06] pt-1.5 dark:border-white/[0.06]">
+                          <span class="flex size-4 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-violet-500 text-[8px] font-bold text-white">{{ card.initial }}</span>
+                          <span class="truncate text-[10px] text-zinc-400">{{ card.name }} · {{ card.handle }}</span>
+                        </div>
+                      </div>
+                      <div v-if="col.cards.length === 0" class="flex h-14 items-center justify-center rounded-lg border-2 border-dashed border-black/10 text-[10px] text-zinc-300 dark:border-white/10">
+                        Drop here
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div class="shrink-0 text-right">
-              <UButton
-                v-if="!dm.hasOrder"
-                to="/inbox"
-                label="+ Order"
-                size="xs"
-                color="primary"
-                variant="subtle"
-                class="font-semibold cursor-pointer"
-              />
-              <UBadge v-else color="success" variant="subtle" size="xs">
-                Linked
-              </UBadge>
-            </div>
+      <!-- Audience marquee -->
+      <section class="marquee-wrap mt-6 overflow-hidden border-y border-black/[0.06] py-4 dark:border-white/[0.06]">
+        <div class="marquee flex w-max items-center gap-8 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500">
+          <template v-for="n in 2" :key="n">
+            <span v-for="a in audience" :key="`${n}-${a}`" class="flex items-center gap-8">
+              {{ a }} <span class="text-violet-400">✳</span>
+            </span>
+          </template>
+        </div>
+      </section>
+
+      <!-- The problem -->
+      <section id="problem" class="mx-auto max-w-5xl scroll-mt-24 px-4 py-20 sm:px-6 sm:py-28">
+        <div data-reveal class="mx-auto max-w-2xl text-center">
+          <p class="text-xs font-bold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-400">The problem</p>
+          <h2 class="font-display mt-3 text-3xl font-semibold leading-[1.1] tracking-[-0.02em] text-balance sm:text-[2.6rem]">
+            The problem isn't getting customers. It's keeping track of the ones who actually bought.
+          </h2>
+        </div>
+
+        <div class="mt-12 grid gap-4 sm:grid-cols-2">
+          <div
+            v-for="(pain, i) in pains"
+            :key="pain.title"
+            data-reveal
+            :style="{ transitionDelay: `${i * 60}ms` }"
+            class="rounded-2xl border border-black/[0.07] bg-white p-6 dark:border-white/10 dark:bg-zinc-900"
+          >
+            <span aria-hidden="true" class="block h-1 w-8 rounded-full bg-rose-400" />
+            <h3 class="font-display mt-4 text-xl font-semibold leading-snug tracking-[-0.01em] text-balance">{{ pain.title }}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{{ pain.body }}</p>
+            <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Every seller, every week</p>
           </div>
         </div>
 
-        <!-- Core Philosophy Reminder Card -->
-        <div class="p-4 rounded-xl border border-default bg-elevated/30 space-y-2 text-xs">
-          <h4 class="font-bold text-highlighted flex items-center gap-1.5">
-            <UIcon name="i-lucide-sparkles" class="size-4 text-amber-500" />
-            Core Flow Philosophy
-          </h4>
-          <p class="text-dimmed leading-relaxed">
-            DM → Customer says <em>"I'll take it"</em> → Seller clicks <strong>+ Create Order</strong> → Customer enters delivery info → Seller updates payment manually (`Pending` → `Paid`).
-          </p>
+        <!-- before / after -->
+        <div data-reveal class="mt-6 grid gap-4 sm:grid-cols-2">
+          <div class="rounded-2xl border border-rose-200/70 bg-rose-50/50 p-6 dark:border-rose-500/20 dark:bg-rose-500/[0.06]">
+            <p class="text-xs font-bold uppercase tracking-wider text-rose-500">Today</p>
+            <ul class="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+              <li v-for="b in beforeList" :key="b" class="flex items-center gap-2">
+                <span class="text-rose-400">✕</span> {{ b }}
+              </li>
+            </ul>
+            <p class="mt-4 font-display text-lg font-semibold text-rose-600 dark:text-rose-400">Six places. Zero certainty.</p>
+          </div>
+          <div class="rounded-2xl border border-violet-200 bg-violet-50/60 p-6 dark:border-violet-500/25 dark:bg-violet-500/[0.08]">
+            <p class="text-xs font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">With Plum</p>
+            <ul class="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-200">
+              <li v-for="a in afterList" :key="a" class="flex items-center gap-2">
+                <UIcon name="i-lucide-check" class="size-4 shrink-0 text-emerald-500" /> {{ a }}
+              </li>
+            </ul>
+            <p class="mt-4 font-display text-lg font-semibold text-violet-700 dark:text-violet-300">One order. Total clarity.</p>
+          </div>
         </div>
-      </div>
+      </section>
 
+      <!-- How it works -->
+      <section id="how" class="scroll-mt-24 bg-white py-20 sm:py-28 dark:bg-zinc-900/40">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6">
+          <div data-reveal class="mx-auto max-w-2xl text-center">
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-400">How it works</p>
+            <h2 class="font-display mt-3 text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-[2.6rem]">
+              Selling stays the same. The messy part doesn't.
+            </h2>
+            <p class="mt-4 text-zinc-600 dark:text-zinc-300">Six small steps. No new habits, no storefront, no catalog to upload.</p>
+          </div>
+
+          <ol class="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+            <li
+              v-for="(step, i) in steps"
+              :key="step.title"
+              data-reveal
+              :style="{ transitionDelay: `${(i % 2) * 70}ms` }"
+              class="flex gap-4"
+            >
+              <span class="font-display shrink-0 text-2xl font-semibold text-violet-400 dark:text-violet-500">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div>
+                <h3 class="text-base font-bold">{{ step.title }}</h3>
+                <p class="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{{ step.body }}</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Why Plum -->
+      <section id="why" class="mx-auto max-w-5xl scroll-mt-24 px-4 py-20 sm:px-6 sm:py-28">
+        <div data-reveal class="mx-auto max-w-2xl text-center">
+          <p class="text-xs font-bold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-400">Why Plum</p>
+          <h2 class="font-display mt-3 text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-[2.6rem]">
+            Built for the way Instagram sellers actually sell.
+          </h2>
+        </div>
+
+        <div class="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+          <div
+            v-for="(d, i) in diffs"
+            :key="d.title"
+            data-reveal
+            :style="{ transitionDelay: `${(i % 2) * 70}ms` }"
+            class="border-t-2 border-violet-200 pt-4 dark:border-violet-500/30"
+          >
+            <h3 class="text-base font-bold">{{ d.title }}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{{ d.body }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="mx-auto max-w-2xl scroll-mt-24 px-4 py-20 sm:px-6 sm:py-28">
+        <div data-reveal class="text-center">
+          <p class="text-xs font-bold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-400">FAQ</p>
+          <h2 class="font-display mt-3 text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-[2.6rem]">
+            The questions sellers actually ask.
+          </h2>
+        </div>
+
+        <UAccordion
+          data-reveal
+          :items="faqs"
+          :unmount-on-hide="false"
+          class="mt-10 border-t border-black/[0.08] dark:border-white/10"
+          :ui="{
+            item: 'border-b border-black/[0.08] dark:border-white/10',
+            trigger: 'py-4 gap-4 text-base cursor-pointer group',
+            label: 'font-semibold text-zinc-900 group-data-[state=open]:text-violet-600 dark:text-zinc-100 dark:group-data-[state=open]:text-violet-400 transition-colors',
+            trailingIcon: 'size-4 text-zinc-400 group-data-[state=open]:text-violet-500',
+            content: 'text-sm',
+            body: 'pb-4 pr-8 leading-relaxed text-zinc-600 dark:text-zinc-300'
+          }"
+        />
+
+        <p data-reveal class="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          Still unsure?
+          <NuxtLink to="/register" class="font-semibold text-violet-600 hover:underline dark:text-violet-400">Start free</NuxtLink>
+          and poke around — there's nothing to set up first.
+        </p>
+      </section>
+
+      <!-- Final CTA -->
+      <section class="mx-auto max-w-5xl px-4 pb-24 sm:px-6">
+        <div data-reveal class="relative overflow-hidden rounded-3xl bg-violet-600 px-6 py-16 text-center text-white sm:px-10 sm:py-20">
+          <div aria-hidden="true" class="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-white/10 blur-2xl" />
+          <div aria-hidden="true" class="pointer-events-none absolute -bottom-24 -left-10 size-64 rounded-full bg-fuchsia-400/20 blur-2xl" />
+          <h2 class="font-display relative text-3xl font-semibold leading-[1.1] tracking-[-0.02em] text-balance sm:text-5xl">
+            Your DMs can stay messy.<br class="hidden sm:block"> Your orders don't have to.
+          </h2>
+          <p class="relative mx-auto mt-4 max-w-lg text-violet-100">
+            Keep selling on Instagram exactly as you do. Let Plum take care of the orders.
+          </p>
+          <div class="relative mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <NuxtLink
+              to="/register"
+              class="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-violet-700 transition-colors hover:bg-violet-50 sm:w-auto"
+            >
+              Start free <UIcon name="i-lucide-arrow-right" class="size-4" />
+            </NuxtLink>
+            <NuxtLink
+              to="/login"
+              class="inline-flex w-full items-center justify-center rounded-full px-7 py-3.5 text-sm font-semibold text-white ring-1 ring-white/40 transition-colors hover:bg-white/10 sm:w-auto"
+            >
+              I already sell with Plum
+            </NuxtLink>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="border-t border-black/[0.07] dark:border-white/[0.07]">
+        <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-zinc-500 dark:text-zinc-400 sm:flex-row sm:px-6">
+          <div class="flex items-center gap-2">
+            <span class="flex size-6 items-center justify-center rounded-md bg-violet-600 text-[11px] font-black text-white">P</span>
+            <span class="font-display font-semibold text-zinc-700 dark:text-zinc-300">Plum</span>
+            <span>· Instagram DMs into orders</span>
+          </div>
+          <div class="flex items-center gap-6">
+            <NuxtLink to="/login" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Log in</NuxtLink>
+            <NuxtLink to="/register" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Start free</NuxtLink>
+            <NuxtLink to="/app" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Dashboard</NuxtLink>
+          </div>
+        </div>
+      </footer>
     </div>
-  </template>
-
-    <!-- SHAREABLE INSTAGRAM STORY BADGE MODAL -->
-    <UModal v-model:open="isStoryModalOpen" title="Share Milestone to Instagram Story">
-      <template #body>
-        <div v-if="selectedShareBadge" class="space-y-4 text-center p-2">
-          <!-- Graphic Preview Card designed for Instagram Story Screenshotting -->
-          <div class="p-6 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-600 to-indigo-700 text-white shadow-xl space-y-4 max-w-xs mx-auto border border-white/20">
-            <div class="size-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mx-auto text-2xl">
-              🏆
-            </div>
-
-            <div class="space-y-1">
-              <span class="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
-                Verified Seller Milestone
-              </span>
-              <h3 class="text-xl font-extrabold tracking-tight mt-1">{{ selectedShareBadge.title }}</h3>
-              <p class="text-xs text-white/80">{{ selectedShareBadge.description }}</p>
-            </div>
-
-            <div class="pt-3 border-t border-white/20 flex items-center justify-between text-[11px] font-semibold text-white/90">
-              <span>@thrift_store_india</span>
-              <span class="bg-black/30 px-2 py-0.5 rounded">Plum Verified</span>
-            </div>
-          </div>
-
-          <p class="text-xs text-dimmed">
-            Screenshot or copy this graphic card to post on your store's Instagram Story to build trust with buyers!
-          </p>
-        </div>
-      </template>
-
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton label="Close" color="neutral" variant="outline" @click="isStoryModalOpen = false" />
-          <UButton
-            label="Copy Story Graphic"
-            icon="i-lucide-copy"
-            color="primary"
-            class="font-bold cursor-pointer"
-            @click="isStoryModalOpen = false"
-          />
-        </div>
-      </template>
-    </UModal>
   </div>
 </template>
+
+<style scoped>
+:global(html) {
+  scroll-behavior: smooth;
+}
+
+.landing {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+.font-display {
+  font-family: 'Bricolage Grotesque', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  font-optical-sizing: auto;
+}
+
+.reveal-ready [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-ready [data-reveal].reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Hand-drawn underline: draws itself in when the headline reveals */
+.squiggle path {
+  stroke-dashoffset: 0;
+}
+.reveal-ready .squiggle path {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+}
+.reveal-ready [data-reveal].reveal-in .squiggle path {
+  animation: squiggle-draw 0.7s 0.2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes squiggle-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Audience marquee */
+.marquee {
+  animation: marquee 42s linear infinite;
+}
+.marquee-wrap:hover .marquee {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Hero demo: tab crossfade + auto-cycle progress */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.tabpanel {
+  transition: opacity 0.35s ease;
+}
+.tab-progress {
+  animation: tab-progress 4.6s linear forwards;
+}
+@keyframes tab-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html) {
+    scroll-behavior: auto;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .reveal-ready .squiggle path {
+    stroke-dashoffset: 0;
+  }
+  .marquee {
+    animation: none;
+  }
+  .tabpanel {
+    transition: none;
+  }
+  .tab-progress {
+    display: none;
+  }
+}
+</style>

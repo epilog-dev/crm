@@ -25,7 +25,7 @@ async function signIn() {
   if (err) {
     error.value = err.message
   } else {
-    await router.push('/')
+    await router.push('/app')
   }
 }
 </script>

@@ -30,7 +30,7 @@ export function useNavigation() {
     {
       label: 'Dashboard',
       icon: 'i-lucide-layout-dashboard',
-      to: '/',
+      to: '/app',
       description: 'Overview of sales metrics, active DMs, and recent orders'
     },
     {
@@ -93,7 +93,7 @@ export function useNavigation() {
       {
         label: 'Help & Seller Guide',
         icon: 'i-lucide-help-circle',
-        to: '/'
+        to: '/app'
       }
     ],
     [
