@@ -461,6 +461,27 @@ function getBadgeColor(status: Order['status']) {
                 {{ selectedOrder.paymentStatus }}
               </UBadge>
             </div>
+
+            <!-- Customer-supplied UPI reference (UTR) — match this in your UPI app history -->
+            <div
+              v-if="selectedOrder.paymentRef"
+              class="flex items-center justify-between gap-2 rounded-lg bg-elevated/40 border border-default px-2.5 py-1.5 text-[11px]"
+            >
+              <span class="text-muted shrink-0">UPI ref</span>
+              <span class="font-mono font-semibold text-highlighted truncate">{{ selectedOrder.paymentRef }}</span>
+              <button
+                type="button"
+                @click="navigator.clipboard.writeText(selectedOrder.paymentRef || '')"
+                class="shrink-0 flex items-center gap-1 rounded bg-background border border-default px-2 py-0.5 font-semibold text-highlighted hover:border-primary/50 cursor-pointer transition-all"
+              >
+                <UIcon name="i-lucide-copy" class="size-3 text-primary" />
+                Copy
+              </button>
+            </div>
+            <p v-else-if="selectedOrder.paymentMethod === 'pay_now'" class="text-[11px] text-dimmed">
+              No UPI reference from the buyer — check your UPI app for “Order {{ selectedOrder.orderCode }}”.
+            </p>
+
             <UButton
               :label="selectedOrder.paymentStatus === 'Paid' ? 'Mark as Pending' : 'Mark as Paid'"
               :color="selectedOrder.paymentStatus === 'Paid' ? 'warning' : 'success'"
@@ -492,8 +513,8 @@ function getBadgeColor(status: Order['status']) {
               @click="viewReceipt"
             />
           </div>
-          <div v-else-if="selectedOrder.paymentMethod === 'pay_now'" class="p-3 rounded-xl border border-dashed border-default text-center">
-            <p class="text-[11px] text-dimmed">Customer selected Pay Now but hasn't uploaded a receipt yet.</p>
+          <div v-else-if="selectedOrder.paymentMethod === 'pay_now' && !selectedOrder.paymentRef" class="p-3 rounded-xl border border-dashed border-default text-center">
+            <p class="text-[11px] text-dimmed">Buyer chose Pay Now but hasn't left a UPI reference or screenshot yet.</p>
           </div>
 
           <!-- Order Status Lifecycle Selector (Feature #6) -->

@@ -103,7 +103,7 @@ export function useNavigation() {
         color: 'error',
         onSelect: async () => {
           await supabase.auth.signOut()
-          await router.push('/login')
+          await router.push('/')
         }
       }
     ]

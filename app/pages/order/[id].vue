@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { renderSVG } from 'uqr'
 
 definePageMeta({
   layout: false,
@@ -27,6 +28,7 @@ interface PublicOrder {
   customer_pincode: string | null
   confirmed_by_customer: boolean
   receipt_uploaded: boolean
+  payment_ref: string | null
   created_at: string
   order_items: PublicOrderItem[]
   store: { name: string, upi_vpa: string | null, cod_enabled: boolean, require_receipt_upload: boolean }
@@ -49,6 +51,7 @@ async function loadOrder() {
     formData.value.address = order.value.customer_address || formData.value.address
     formData.value.pincode = order.value.customer_pincode || formData.value.pincode
     if (order.value.payment_method) formData.value.paymentMethod = order.value.payment_method
+    if (order.value.payment_ref) formData.value.paymentRef = order.value.payment_ref
   } catch {
     loadError.value = 'This order link is invalid or has expired.'
   } finally {
@@ -59,9 +62,66 @@ async function loadOrder() {
 onMounted(loadOrder)
 
 const item = computed(() => order.value?.order_items?.[0])
+
+function money(amount: number | null | undefined, currency = 'INR') {
+  const n = Number(amount ?? 0).toLocaleString('en-IN')
+  return currency === 'INR' ? `₹${n}` : `${currency} ${n}`
+}
 const allowCod = computed(() => order.value?.store?.cod_enabled ?? false)
 const requireReceipt = computed(() => order.value?.store?.require_receipt_upload ?? true)
 const isSubmitted = computed(() => order.value?.confirmed_by_customer ?? false)
+
+// UPI deep link — a prefilled payment intent with fixed values.
+// Seller-set: payee VPA (store.upi_vpa) + payee name (store.name).
+// Order-set: amount (unit_price, locked in the UPI app), note + reference (order code).
+const upiVpa = computed(() => order.value?.store?.upi_vpa?.trim() || '')
+const upiLink = computed(() => {
+  if (!upiVpa.value || !order.value || !item.value) return ''
+  const params = new URLSearchParams({
+    pa: upiVpa.value,
+    pn: order.value.store.name,
+    am: String(item.value.unit_price),
+    cu: 'INR',
+    tn: `Order ${order.value.order_code}`,
+    tr: order.value.order_code
+  })
+  // UPI apps are happiest with %20 rather than "+" for spaces in the note.
+  return `upi://pay?${params.toString().replace(/\+/g, '%20')}`
+})
+const upiQrSvg = computed(() =>
+  upiLink.value
+    ? renderSVG(upiLink.value, { ecc: 'M', border: 2, whiteColor: '#ffffff', blackColor: '#0a0a0a' })
+    : ''
+)
+
+const copiedVpa = ref(false)
+function copyVpa() {
+  if (!upiVpa.value) return
+  navigator.clipboard.writeText(upiVpa.value)
+  copiedVpa.value = true
+  setTimeout(() => { copiedVpa.value = false }, 1800)
+}
+
+// upi:// only launches on a device that has a UPI app registered (basically
+// Android). On desktop / iOS Safari the click quietly does nothing, so lead
+// with the QR there and show a hint if the deep link fails to open anything.
+const isAndroid = ref(false)
+const upiAppMissing = ref(false)
+onMounted(() => {
+  isAndroid.value = /android/i.test(navigator.userAgent)
+})
+function onUpiClick() {
+  upiAppMissing.value = false
+  // If a UPI app takes over, the tab goes hidden. If it never does, nothing
+  // opened — show the "scan the QR instead" hint.
+  let leftPage = false
+  const onHide = () => { if (document.visibilityState === 'hidden') leftPage = true }
+  document.addEventListener('visibilitychange', onHide)
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', onHide)
+    if (!leftPage) upiAppMissing.value = true
+  }, 1600)
+}
 
 const formData = ref({
   name: '',
@@ -69,6 +129,7 @@ const formData = ref({
   address: '',
   pincode: '',
   paymentMethod: 'pay_now' as 'pay_now' | 'cod',
+  paymentRef: '',
   receiptFile: null as File | null,
   receiptFileName: ''
 })
@@ -87,8 +148,13 @@ function handleFileSelect(event: Event) {
 async function handleConfirmOrder() {
   if (!formData.value.name || !formData.value.phone || !formData.value.address || !formData.value.pincode) return
 
-  if (formData.value.paymentMethod === 'pay_now' && requireReceipt.value && !formData.value.receiptFile) {
-    submitError.value = 'Please upload your payment screenshot/receipt before confirming.'
+  if (
+    formData.value.paymentMethod === 'pay_now'
+    && requireReceipt.value
+    && !formData.value.paymentRef.trim()
+    && !formData.value.receiptFile
+  ) {
+    submitError.value = 'Add your UPI reference number (or a screenshot) so the seller can confirm your payment.'
     return
   }
 
@@ -108,7 +174,8 @@ async function handleConfirmOrder() {
         phone: formData.value.phone,
         address: formData.value.address,
         pincode: formData.value.pincode,
-        payment_method: formData.value.paymentMethod
+        payment_method: formData.value.paymentMethod,
+        payment_ref: formData.value.paymentRef.trim()
       }
     })
   } catch (err) {
@@ -168,7 +235,7 @@ useSeoMeta({
             </div>
           </div>
           <div class="text-right">
-            <span class="text-lg font-extrabold text-highlighted">{{ item.currency }}{{ item.unit_price.toLocaleString('en-IN') }}</span>
+            <span class="text-lg font-extrabold text-highlighted">{{ money(item.unit_price, item.currency) }}</span>
           </div>
         </div>
       </div>
@@ -223,6 +290,7 @@ useSeoMeta({
           <p class="text-dimmed">{{ formData.name }} • {{ formData.phone }}</p>
           <p class="text-dimmed">{{ formData.address }}, {{ formData.pincode }}</p>
           <p class="text-muted mt-1">Payment Choice: <strong class="text-highlighted uppercase">{{ order.payment_method === 'pay_now' ? 'UPI / QR Paid' : 'Cash on Delivery (COD)' }}</strong></p>
+          <p v-if="order.payment_ref" class="text-muted">UPI reference: <strong class="text-highlighted font-mono">{{ order.payment_ref }}</strong></p>
         </div>
       </div>
 
@@ -299,36 +367,105 @@ useSeoMeta({
 
           <!-- PAY NOW CONDITIONAL CONTENT: QR Code & Receipt Upload -->
           <div v-if="formData.paymentMethod === 'pay_now'" class="p-4 rounded-xl bg-elevated/40 border border-default space-y-3">
-            <div class="text-center space-y-2">
-              <span class="text-xs font-bold text-highlighted">Scan QR to pay {{ item?.currency }}{{ item?.unit_price.toLocaleString('en-IN') }}</span>
-              <!-- Mock UPI QR Code SVG -->
-              <div class="size-36 mx-auto bg-white p-2 rounded-xl border border-default flex items-center justify-center shadow-xs">
-                <svg viewBox="0 0 100 100" class="w-full h-full text-black">
-                  <path fill="currentColor" d="M0 0h30v30H0zM40 0h10v10H40zM60 0h10v10H60zM70 0h30v30H70zM10 10h10v10H10zM80 10h10v10H80zM0 40h10v10H0zM20 40h20v10H20zM50 40h10v10H50zM70 40h20v10H70zM0 60h10v10H0zM30 60h10v10H30zM50 60h20v10H50zM80 60h20v10H80zM0 70h30v30H0zM40 70h20v10H40zM70 70h30v30H70zM10 80h10v10H10zM80 80h10v10H80z" />
-                </svg>
+            <div class="text-center space-y-3">
+              <span class="block text-xs font-bold text-highlighted">
+                Pay {{ money(item?.unit_price, item?.currency) }} to {{ order.store.name }}
+              </span>
+
+              <template v-if="upiLink">
+                <!-- Prefilled UPI deep link — opens the buyer's UPI app with the seller's
+                     VPA + name and this order's amount already filled in and locked.
+                     Only launches where a UPI app is registered (Android), so on
+                     desktop / iOS the QR below is the real path. -->
+                <a
+                  :href="upiLink"
+                  class="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold shadow-xs transition-transform active:scale-[0.99]"
+                  :class="isAndroid ? 'bg-primary text-inverted' : 'border border-default bg-background text-highlighted'"
+                  @click="onUpiClick"
+                >
+                  <UIcon name="i-lucide-smartphone" class="size-4" />
+                  {{ isAndroid ? `Pay ${money(item?.unit_price, item?.currency)} on UPI` : 'Open a UPI app to pay' }}
+                </a>
+                <p v-if="isAndroid" class="text-[10px] text-dimmed">Opens GPay, PhonePe, Paytm or any UPI app — the amount is locked.</p>
+
+                <p v-if="upiAppMissing" class="text-[11px] text-amber-600 dark:text-amber-400">
+                  No UPI app opened on this device — scan the QR or copy the UPI ID below.
+                </p>
+
+                <!-- The same prefilled payment as a scannable QR -->
+                <div class="space-y-1.5 pt-1">
+                  <p class="text-[11px] font-semibold text-highlighted">
+                    {{ isAndroid ? '…or scan from another phone' : 'Scan with any UPI app' }}
+                  </p>
+                  <div
+                    class="mx-auto size-44 rounded-xl border border-default bg-white p-2.5 shadow-xs [&>svg]:size-full"
+                    v-html="upiQrSvg"
+                  />
+                </div>
+
+                <!-- Manual fallback: copy the VPA and pay this amount by hand -->
+                <button
+                  type="button"
+                  class="inline-flex cursor-pointer items-center gap-1.5 font-mono text-[11px] text-dimmed transition-colors hover:text-highlighted"
+                  @click="copyVpa"
+                >
+                  <UIcon
+                    :name="copiedVpa ? 'i-lucide-check' : 'i-lucide-copy'"
+                    class="size-3"
+                    :class="copiedVpa ? 'text-emerald-500' : ''"
+                  />
+                  {{ copiedVpa ? 'UPI ID copied' : `Copy UPI ID · ${upiVpa}` }}
+                </button>
+              </template>
+
+              <div v-else class="rounded-xl border border-dashed border-default p-3 text-[11px] text-dimmed">
+                This seller hasn't added a UPI ID yet. Message them for payment details, or choose Cash on Delivery.
               </div>
-              <p class="text-[11px] text-dimmed font-mono">UPI ID: {{ order.store.upi_vpa || 'Not configured yet' }}</p>
             </div>
 
-            <!-- Receipt File Upload -->
-            <div class="space-y-1.5 pt-2 border-t border-default/60">
-              <label class="block text-xs font-semibold text-highlighted">
-                Upload Payment Receipt / Screenshot
-                <span v-if="requireReceipt">*</span>
-                <span v-else class="font-normal text-dimmed">(optional)</span>
-              </label>
-              <div class="flex items-center justify-center w-full">
-                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-default rounded-xl cursor-pointer bg-background hover:bg-elevated/30 transition-colors">
-                  <div class="flex flex-col items-center justify-center pt-2 pb-3">
-                    <UIcon name="i-lucide-upload-cloud" class="size-6 text-dimmed mb-1" />
-                    <p class="text-xs text-dimmed font-medium">
-                      {{ formData.receiptFileName || 'Click to upload payment screenshot' }}
-                    </p>
-                    <p v-if="!formData.receiptFileName" class="text-[10px] text-muted">PNG, JPG or WebP up to 5MB</p>
-                  </div>
-                  <input type="file" accept="image/*" class="hidden" @change="handleFileSelect" />
+            <!-- Payment proof: a reference number is the low-friction way; screenshot is optional -->
+            <div class="space-y-3 pt-3 border-t border-default/60">
+              <div>
+                <label for="upi-ref" class="block text-xs font-semibold text-highlighted">
+                  UPI reference number
+                  <span v-if="requireReceipt && !formData.receiptFile" class="text-primary">*</span>
+                  <span v-else class="font-normal text-dimmed">(recommended)</span>
                 </label>
+                <UInput
+                  id="upi-ref"
+                  v-model="formData.paymentRef"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  placeholder="e.g. 412345678901"
+                  size="md"
+                  class="w-full mt-1"
+                />
+                <p class="text-[10px] text-muted mt-1">
+                  The 12-digit number your UPI app shows after you pay (also next to the payment in its history). Lets the seller confirm without asking.
+                </p>
               </div>
+
+              <details class="group">
+                <summary class="flex cursor-pointer list-none items-center gap-1.5 text-[11px] font-semibold text-dimmed hover:text-highlighted [&::-webkit-details-marker]:hidden">
+                  <UIcon name="i-lucide-paperclip" class="size-3.5 shrink-0" />
+                  <span class="min-w-0 truncate">
+                    {{ formData.receiptFileName ? `Screenshot attached · ${formData.receiptFileName}` : 'Prefer to attach a screenshot? (optional)' }}
+                  </span>
+                  <UIcon name="i-lucide-chevron-down" class="size-3.5 shrink-0 transition-transform group-open:rotate-180" />
+                </summary>
+                <div class="mt-2 flex items-center justify-center w-full">
+                  <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-default rounded-xl cursor-pointer bg-background hover:bg-elevated/30 transition-colors">
+                    <div class="flex flex-col items-center justify-center pt-2 pb-3">
+                      <UIcon name="i-lucide-upload-cloud" class="size-6 text-dimmed mb-1" />
+                      <p class="text-xs text-dimmed font-medium">
+                        {{ formData.receiptFileName || 'Tap to upload payment screenshot' }}
+                      </p>
+                      <p v-if="!formData.receiptFileName" class="text-[10px] text-muted">PNG, JPG or WebP up to 5MB</p>
+                    </div>
+                    <input type="file" accept="image/*" class="hidden" @change="handleFileSelect" >
+                  </label>
+                </div>
+              </details>
             </div>
           </div>
 
@@ -341,7 +478,7 @@ useSeoMeta({
 
           <UButton
             type="submit"
-            :label="formData.paymentMethod === 'pay_now' ? (requireReceipt ? 'Upload Receipt & Confirm Order' : 'Confirm Order') : 'Confirm Cash on Delivery Order'"
+            :label="formData.paymentMethod === 'pay_now' ? 'I\'ve paid — confirm order' : 'Confirm Cash on Delivery Order'"
             color="primary"
             size="lg"
             block

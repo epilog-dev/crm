@@ -176,11 +176,11 @@ function handleDisconnect() {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-default/60">
-          <!-- Mandatory Screenshot Toggle -->
+          <!-- Require payment proof (UTR or screenshot) -->
           <div class="flex items-center justify-between p-3 bg-elevated/20 rounded-xl border border-default">
             <div>
-              <span class="font-semibold text-highlighted block">Require Payment Receipt Upload</span>
-              <p class="text-[11px] text-dimmed">Customer must upload screenshot before confirming.</p>
+              <span class="font-semibold text-highlighted block">Require payment proof</span>
+              <p class="text-[11px] text-dimmed">Buyer must add a UPI reference number (or a screenshot) before placing a prepaid order.</p>
             </div>
             <button
               type="button"

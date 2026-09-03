@@ -24,6 +24,7 @@ export interface OrderViewModel {
   paymentStatus: PaymentStatus
   paymentMethod: 'pay_now' | 'cod' | null
   receiptUploaded: boolean
+  paymentRef: string | null
   createdAt: string
   orderLink: string
 }
@@ -50,6 +51,7 @@ function mapOrder(row: any): OrderViewModel {
     paymentStatus: row.payment_status,
     paymentMethod: row.payment_method ?? null,
     receiptUploaded: !!row.receipt_uploaded,
+    paymentRef: row.payment_ref ?? null,
     createdAt: row.created_at,
     orderLink: `/order/${row.order_code}`
   }

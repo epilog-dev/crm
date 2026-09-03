@@ -8,6 +8,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const { name, phone, address, pincode, payment_method } = body
+  const paymentRef = typeof body.payment_ref === 'string' ? body.payment_ref.trim() : ''
 
   if (!name || !phone || !address || !pincode) {
     throw createError({ statusCode: 400, message: 'name, phone, address and pincode are required' })
@@ -44,8 +45,8 @@ export default defineEventHandler(async (event) => {
   if (payment_method === 'cod' && !store.cod_enabled) {
     throw createError({ statusCode: 400, message: 'Cash on Delivery is not enabled for this store' })
   }
-  if (payment_method === 'pay_now' && store.require_receipt_upload && !order.receipt_uploaded) {
-    throw createError({ statusCode: 400, message: 'Please upload a payment receipt before confirming your order' })
+  if (payment_method === 'pay_now' && store.require_receipt_upload && !order.receipt_uploaded && !paymentRef) {
+    throw createError({ statusCode: 400, message: 'Add your UPI reference number or a payment screenshot before confirming your order' })
   }
 
   // Resolve (or create) the customer record this order's shipping details belong to.
@@ -89,6 +90,7 @@ export default defineEventHandler(async (event) => {
       customer_address: address,
       customer_pincode: pincode,
       payment_method,
+      payment_ref: payment_method === 'pay_now' && paymentRef ? paymentRef : null,
       confirmed_by_customer: true,
       status: 'Awaiting Payment'
     })
