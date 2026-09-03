@@ -98,6 +98,15 @@ const demoKanban = [
     ]
   }
 ]
+
+const quickReplies = [
+  { label: '📦 In stock?' },
+  { label: '🚚 Delivery time' },
+  { label: '💳 Payment info' },
+  { label: '📸 Send a photo' },
+  { label: '⚡ Create order link', accent: true }
+]
+
 const activeTab = ref(0)
 const autoPaused = ref(false)
 const hovering = ref(false)
@@ -532,11 +541,19 @@ onUnmounted(() => cleanupReveal?.())
                         <div class="mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3.5 py-2 text-xs dark:bg-zinc-800 sm:max-w-[80%]">Great — how do I pay?</div>
                       </div>
                       <div class="space-y-2 border-t border-black/[0.06] p-3 dark:border-white/[0.06]">
-                        <div class="scrollbar-none flex gap-1.5 overflow-x-auto text-[10px]">
-                          <span class="shrink-0 rounded-full border border-black/10 px-2 py-1 text-zinc-500 dark:border-white/15">📦 In stock?</span>
-                          <span class="shrink-0 rounded-full border border-black/10 px-2 py-1 text-zinc-500 dark:border-white/15">🚚 Delivery time</span>
-                          <span class="shrink-0 rounded-full border border-pink-500/30 bg-pink-500/10 px-2 py-1 font-semibold text-pink-600 dark:text-pink-400">⚡ Create order link</span>
-                        </div>
+                        <UCarousel
+                          v-slot="{ item }"
+                          :items="quickReplies"
+                          :ui="{ container: 'ms-0 gap-1.5', item: 'ps-0 basis-auto' }"
+                          class="[mask-image:linear-gradient(to_right,#000_calc(100%-20px),transparent)]"
+                        >
+                          <span
+                            class="block cursor-grab rounded-full border px-2 py-1 text-[10px] whitespace-nowrap select-none active:cursor-grabbing"
+                            :class="item.accent
+                              ? 'border-pink-500/30 bg-pink-500/10 font-semibold text-pink-600 dark:text-pink-400'
+                              : 'border-black/10 text-zinc-500 dark:border-white/15'"
+                          >{{ item.label }}</span>
+                        </UCarousel>
                         <div class="flex items-center gap-2 rounded-full border border-black/10 px-3.5 py-2 text-xs text-zinc-400 dark:border-white/15">
                           Type a reply…
                           <span class="ml-auto flex size-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white"><UIcon name="i-lucide-send" class="size-3" /></span>

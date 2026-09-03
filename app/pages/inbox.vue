@@ -357,7 +357,7 @@ function copyOrderLink(text: string) {
           <!-- DM Input Form with Quick Snippets Bar -->
           <div class="p-3 border-t border-default bg-background space-y-2">
             <!-- Quick Canned Snippets Chips -->
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            <!-- <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
               <span class="text-[11px] font-semibold text-muted shrink-0 mr-1">Quick Reply:</span>
               <button
                 type="button"
@@ -387,7 +387,7 @@ function copyOrderLink(text: string) {
               >
                 ⚡ Create Order Link
               </button>
-            </div>
+            </div> -->
 
             <form @submit.prevent="sendMessage" class="flex gap-2 items-center">
               <UInput
