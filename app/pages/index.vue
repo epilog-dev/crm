@@ -515,19 +515,21 @@ onUnmounted(() => cleanupReveal?.())
                     </div>
 
                     <div class="flex min-w-0 flex-1 flex-col">
-                      <div class="flex items-center gap-2.5 border-b border-black/[0.06] px-4 py-2.5 dark:border-white/[0.06]">
-                        <span class="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-violet-500 text-xs font-bold text-white">P</span>
+                      <div class="flex items-center gap-2 border-b border-black/[0.06] px-3 py-2.5 sm:gap-2.5 sm:px-4 dark:border-white/[0.06]">
+                        <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-violet-500 text-xs font-bold text-white">P</span>
                         <div class="min-w-0 flex-1">
-                          <p class="text-sm font-bold">Priya Nair <span class="text-xs font-normal text-zinc-400">@priya.thrifts</span></p>
-                          <p class="text-[11px] font-medium text-emerald-500">Customer via Instagram DM</p>
+                          <p class="truncate text-sm font-bold">Priya Nair <span class="text-xs font-normal text-zinc-400">@priya.thrifts</span></p>
+                          <p class="truncate text-[11px] font-medium text-emerald-500">Customer via Instagram DM</p>
                         </div>
-                        <span class="hidden rounded-lg border border-black/10 px-2.5 py-1.5 text-[11px] font-semibold sm:inline dark:border-white/15">Message on IG</span>
-                        <span class="rounded-lg bg-violet-600 px-3 py-1.5 text-[11px] font-bold text-white">+ Order</span>
+                        <span class="hidden rounded-lg border border-black/10 px-2.5 py-1.5 text-[11px] font-semibold lg:inline dark:border-white/15">Message on IG</span>
+                        <span class="shrink-0 rounded-lg bg-violet-600 px-2.5 py-1.5 text-[11px] font-bold text-white sm:px-3">+ Order</span>
                       </div>
-                      <div class="flex-1 space-y-2.5 overflow-hidden p-4">
-                        <div class="mr-auto max-w-[80%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3.5 py-2 text-xs dark:bg-zinc-800">Hi! Is the linen co-ord set still available in M?</div>
-                        <div class="ml-auto max-w-[80%] rounded-2xl rounded-tr-sm bg-violet-600 px-3.5 py-2 text-xs text-white">Yes it is — ₹1,450 including shipping.</div>
-                        <div class="mr-auto max-w-[80%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3.5 py-2 text-xs dark:bg-zinc-800">Great — how do I pay?</div>
+                      <div class="flex flex-1 flex-col justify-end gap-2.5 overflow-hidden p-3 sm:p-4">
+                        <div class="mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3.5 py-2 text-xs dark:bg-zinc-800 sm:max-w-[80%]">Hi! Is the linen co-ord set still available in M?</div>
+                        <div class="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-violet-600 px-3.5 py-2 text-xs text-white sm:max-w-[80%]">Yes it is — ₹1,450 including shipping across India.</div>
+                        <div class="mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3.5 py-2 text-xs dark:bg-zinc-800 sm:max-w-[80%]">Perfect. Can I get it by Friday?</div>
+                        <div class="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-violet-600 px-3.5 py-2 text-xs text-white sm:max-w-[80%]">Yep — 2 to 4 days. Sending your order link now 💜</div>
+                        <div class="mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3.5 py-2 text-xs dark:bg-zinc-800 sm:max-w-[80%]">Great — how do I pay?</div>
                       </div>
                       <div class="space-y-2 border-t border-black/[0.06] p-3 dark:border-white/[0.06]">
                         <div class="scrollbar-none flex gap-1.5 overflow-x-auto text-[10px]">
@@ -537,7 +539,7 @@ onUnmounted(() => cleanupReveal?.())
                         </div>
                         <div class="flex items-center gap-2 rounded-full border border-black/10 px-3.5 py-2 text-xs text-zinc-400 dark:border-white/15">
                           Type a reply…
-                          <span class="ml-auto flex size-6 items-center justify-center rounded-full bg-violet-600 text-white"><UIcon name="i-lucide-send" class="size-3" /></span>
+                          <span class="ml-auto flex size-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white"><UIcon name="i-lucide-send" class="size-3" /></span>
                         </div>
                       </div>
                     </div>
