@@ -75,7 +75,7 @@ const isSubmitted = computed(() => order.value?.confirmed_by_customer ?? false)
 // Seller-set: payee VPA (store.upi_vpa) + payee name (store.name).
 // Order-set: amount (unit_price, locked in the UPI app), note + reference (order code).
 const upiVpa = computed(() => order.value?.store?.upi_vpa?.trim() || '')
-const upiLink = computed(() => {
+const upiQuery = computed(() => {
   if (!upiVpa.value || !order.value || !item.value) return ''
   const params = new URLSearchParams({
     pa: upiVpa.value,
@@ -86,7 +86,21 @@ const upiLink = computed(() => {
     tr: order.value.order_code
   })
   // UPI apps are happiest with %20 rather than "+" for spaces in the note.
-  return `upi://pay?${params.toString().replace(/\+/g, '%20')}`
+  return params.toString().replace(/\+/g, '%20')
+})
+// Generic UPI intent — Android routes it to whichever UPI app is set as default.
+const upiLink = computed(() => (upiQuery.value ? `upi://pay?${upiQuery.value}` : ''))
+// Same payload, addressed to a specific app so the buyer picks instead of
+// getting the system default (which might be WhatsApp Pay, a bank app, etc.).
+const upiApps = computed(() => {
+  const q = upiQuery.value
+  if (!q) return []
+  return [
+    { name: 'Google Pay', href: `tez://upi/pay?${q}`, dot: '#4285F4' },
+    { name: 'PhonePe', href: `phonepe://pay?${q}`, dot: '#5F259F' },
+    { name: 'Paytm', href: `paytmmp://pay?${q}`, dot: '#00BAF2' },
+    { name: 'Other UPI app', href: `upi://pay?${q}`, dot: '#16A34A' }
+  ]
 })
 const upiQrSvg = computed(() =>
   upiLink.value
@@ -102,13 +116,15 @@ function copyVpa() {
   setTimeout(() => { copiedVpa.value = false }, 1800)
 }
 
-// upi:// only launches on a device that has a UPI app registered (basically
-// Android). On desktop / iOS Safari the click quietly does nothing, so lead
-// with the QR there and show a hint if the deep link fails to open anything.
+// UPI deep links only launch where a UPI app is installed (phones). On desktop
+// the click quietly does nothing, so there we lead with the QR and show a hint.
 const isAndroid = ref(false)
+const isMobile = ref(false)
 const upiAppMissing = ref(false)
 onMounted(() => {
-  isAndroid.value = /android/i.test(navigator.userAgent)
+  const ua = navigator.userAgent
+  isAndroid.value = /android/i.test(ua)
+  isMobile.value = isAndroid.value || /iphone|ipad|ipod/i.test(ua)
 })
 function onUpiClick() {
   upiAppMissing.value = false
@@ -373,29 +389,43 @@ useSeoMeta({
               </span>
 
               <template v-if="upiLink">
-                <!-- Prefilled UPI deep link — opens the buyer's UPI app with the seller's
-                     VPA + name and this order's amount already filled in and locked.
-                     Only launches where a UPI app is registered (Android), so on
-                     desktop / iOS the QR below is the real path. -->
+                <!-- Prefilled UPI payment (seller's VPA + name, this order's amount
+                     locked, order code as note/ref). On phones the buyer picks their
+                     app directly; on desktop the QR below is the real path. -->
+                <template v-if="isMobile">
+                  <div class="grid grid-cols-2 gap-2">
+                    <a
+                      v-for="app in upiApps"
+                      :key="app.name"
+                      :href="app.href"
+                      class="flex items-center justify-center gap-2 rounded-xl border border-default bg-background py-2.5 text-xs font-bold text-highlighted transition-transform active:scale-[0.98]"
+                      @click="onUpiClick"
+                    >
+                      <span class="size-2 shrink-0 rounded-full" :style="{ background: app.dot }" />
+                      {{ app.name }}
+                    </a>
+                  </div>
+                  <p class="text-[10px] text-dimmed">Amount is locked at {{ money(item?.unit_price, item?.currency) }}.</p>
+                </template>
+
                 <a
+                  v-else
                   :href="upiLink"
-                  class="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold shadow-xs transition-transform active:scale-[0.99]"
-                  :class="isAndroid ? 'bg-primary text-inverted' : 'border border-default bg-background text-highlighted'"
+                  class="flex w-full items-center justify-center gap-2 rounded-xl border border-default bg-background py-3 text-sm font-bold text-highlighted shadow-xs transition-transform active:scale-[0.99]"
                   @click="onUpiClick"
                 >
                   <UIcon name="i-lucide-smartphone" class="size-4" />
-                  {{ isAndroid ? `Pay ${money(item?.unit_price, item?.currency)} on UPI` : 'Open a UPI app to pay' }}
+                  Open a UPI app to pay
                 </a>
-                <p v-if="isAndroid" class="text-[10px] text-dimmed">Opens GPay, PhonePe, Paytm or any UPI app — the amount is locked.</p>
 
                 <p v-if="upiAppMissing" class="text-[11px] text-amber-600 dark:text-amber-400">
-                  No UPI app opened on this device — scan the QR or copy the UPI ID below.
+                  Couldn't open that app — try another, or scan the QR / copy the UPI ID below.
                 </p>
 
                 <!-- The same prefilled payment as a scannable QR -->
                 <div class="space-y-1.5 pt-1">
                   <p class="text-[11px] font-semibold text-highlighted">
-                    {{ isAndroid ? '…or scan from another phone' : 'Scan with any UPI app' }}
+                    {{ isMobile ? '…or scan from another phone' : 'Scan with any UPI app' }}
                   </p>
                   <div
                     class="mx-auto size-44 rounded-xl border border-default bg-white p-2.5 shadow-xs [&>svg]:size-full"
