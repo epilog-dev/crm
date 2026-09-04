@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import type { TableColumn } from '@nuxt/ui'
 import type { OrderViewModel as Order } from '~/composables/useOrders'
 
 definePageMeta({
@@ -52,6 +53,32 @@ async function viewReceipt() {
 }
 
 const statusOptions = ['All', 'Confirmed', 'Awaiting Payment', 'Paid', 'Shipped', 'Delivered', 'Cancelled']
+const statusFilterItems = statusOptions.map(s => ({ label: `Status: ${s}`, value: s }))
+
+const orderColumns: TableColumn<Order>[] = [
+  { accessorKey: 'orderCode', header: 'Order ID' },
+  { accessorKey: 'customer', header: 'Customer' },
+  { accessorKey: 'item', header: 'Item & Variant' },
+  { accessorKey: 'price', header: 'Price' },
+  { accessorKey: 'paymentStatus', header: 'Payment' },
+  { accessorKey: 'status', header: 'Order Lifecycle Status' },
+  { id: 'actions', header: '' }
+]
+
+const tableUi = {
+  base: 'table-fixed border-separate border-spacing-0',
+  thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+  tbody: '[&>tr]:last:[&>td]:border-b-0',
+  tr: 'cursor-pointer hover:bg-elevated/20',
+  th: 'py-2 text-xs uppercase first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
+  td: 'border-b border-default text-xs',
+  separator: 'h-0'
+}
+
+function onRowSelect(e: unknown) {
+  const record = (e as { original?: Order })?.original ?? (e as Order)
+  if (record?.id) openOrderDetails(record)
+}
 
 // Kanban Columns mapping
 const kanbanColumns = computed(() => {
@@ -203,14 +230,12 @@ function getBadgeColor(status: Order['status']) {
           </button>
         </div>
 
-        <select
+        <USelect
           v-model="selectedStatusFilter"
-          class="text-xs px-3 py-1.5 rounded-lg border border-default bg-background text-highlighted font-medium cursor-pointer"
-        >
-          <option v-for="opt in statusOptions" :key="opt" :value="opt">
-            Status: {{ opt }}
-          </option>
-        </select>
+          :items="statusFilterItems"
+          size="sm"
+          class="min-w-44"
+        />
 
         <UButton
           to="/inbox"
@@ -228,92 +253,75 @@ function getBadgeColor(status: Order['status']) {
     </div>
 
     <!-- VIEW 1: Table View -->
-    <div v-if="!pending && viewMode === 'table'" class="border border-default rounded-xl overflow-hidden bg-background">
-      <table class="w-full text-left text-xs">
-        <thead class="bg-elevated/50 border-b border-default text-muted uppercase font-semibold">
-          <tr>
-            <th class="p-3">Order ID</th>
-            <th class="p-3">Customer</th>
-            <th class="p-3">Item & Variant</th>
-            <th class="p-3">Price</th>
-            <th class="p-3">Payment</th>
-            <th class="p-3">Order Lifecycle Status</th>
-            <th class="p-3 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-default">
-          <tr
-            v-for="order in filteredOrders"
-            :key="order.id"
-            class="hover:bg-elevated/20 transition-colors cursor-pointer"
-            @click="openOrderDetails(order)"
-          >
-            <td class="p-3 font-mono font-bold text-highlighted">
-              {{ order.orderCode }}
-            </td>
-            <td class="p-3">
-              <div class="flex items-center gap-2">
-                <UAvatar :src="order.customer.avatar" :alt="order.customer.name" size="xs" />
-                <div>
-                  <p class="font-bold text-highlighted">{{ order.customer.name }}</p>
-                  <p class="text-dimmed text-[11px]">{{ order.customer.handle }}</p>
-                </div>
-              </div>
-            </td>
-            <td class="p-3">
-              <p class="font-medium text-highlighted">{{ order.item }}</p>
-              <span class="text-muted text-[11px]">Variant: {{ order.variant }}</span>
-            </td>
-            <td class="p-3 font-bold text-highlighted">
-              {{ order.currency }}{{ order.price.toLocaleString('en-IN') }}
-            </td>
-            <td class="p-3">
-              <UBadge
-                :color="order.paymentStatus === 'Paid' ? 'success' : 'warning'"
-                variant="subtle"
-                size="xs"
-              >
-                {{ order.paymentStatus === 'Paid' ? 'Paid' : 'Pending' }}
-              </UBadge>
-            </td>
-            <td class="p-3">
-              <UBadge :color="getBadgeColor(order.status)" variant="subtle" size="xs">
-                {{ order.status }}
-              </UBadge>
-            </td>
-            <td class="p-3 text-right">
-              <UButton
-                label="View / Manage"
-                size="xs"
-                color="neutral"
-                variant="outline"
-                @click.stop="openOrderDetails(order)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Illustrated Empty State for Orders -->
-      <div v-if="filteredOrders.length === 0" class="py-12 px-4 text-center space-y-3">
-        <div class="size-14 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto">
-          <UIcon name="i-lucide-shopping-bag" class="size-7 text-dimmed" />
-        </div>
-        <div>
-          <h4 class="text-sm font-bold text-highlighted">No matching orders found</h4>
-          <p class="text-xs text-dimmed max-w-sm mx-auto mt-0.5">
-            Try adjusting your search query or status filter above, or create a new order directly from a DM.
-          </p>
-        </div>
-        <UButton
-          to="/inbox"
-          label="+ Create Order from DM"
-          icon="i-lucide-message-square"
-          color="primary"
-          size="sm"
-          class="font-bold cursor-pointer"
-        />
-      </div>
+    <div v-if="!pending && viewMode === 'table'">
+      <UTable
+        :data="filteredOrders"
+        :columns="orderColumns"
+        :ui="tableUi"
+        @select="onRowSelect"
+      >
+        <template #orderCode-cell="{ row }">
+          <span class="font-mono font-bold text-highlighted">{{ row.original.orderCode }}</span>
+        </template>
+        <template #customer-cell="{ row }">
+          <div class="flex items-center gap-2">
+            <UAvatar :src="row.original.customer.avatar" :alt="row.original.customer.name" size="xs" />
+            <div>
+              <p class="font-bold text-highlighted">{{ row.original.customer.name }}</p>
+              <p class="text-[11px] text-dimmed">{{ row.original.customer.handle }}</p>
+            </div>
+          </div>
+        </template>
+        <template #item-cell="{ row }">
+          <p class="font-medium text-highlighted">{{ row.original.item }}</p>
+          <span class="text-[11px] text-muted">Variant: {{ row.original.variant }}</span>
+        </template>
+        <template #price-cell="{ row }">
+          <span class="font-bold text-highlighted">{{ row.original.currency }}{{ row.original.price.toLocaleString('en-IN') }}</span>
+        </template>
+        <template #paymentStatus-cell="{ row }">
+          <UBadge :color="row.original.paymentStatus === 'Paid' ? 'success' : 'warning'" variant="subtle" size="xs">
+            {{ row.original.paymentStatus === 'Paid' ? 'Paid' : 'Pending' }}
+          </UBadge>
+        </template>
+        <template #status-cell="{ row }">
+          <UBadge :color="getBadgeColor(row.original.status)" variant="subtle" size="xs">
+            {{ row.original.status }}
+          </UBadge>
+        </template>
+        <template #actions-cell="{ row }">
+          <div class="text-right">
+            <UButton
+              label="View / Manage"
+              size="xs"
+              color="neutral"
+              variant="outline"
+              @click.stop="openOrderDetails(row.original)"
+            />
+          </div>
+        </template>
+        <template #empty>
+          <div class="space-y-3 px-4 py-10 text-center">
+            <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+              <UIcon name="i-lucide-shopping-bag" class="size-7 text-dimmed" />
+            </div>
+            <div>
+              <h4 class="text-sm font-bold text-highlighted">No matching orders found</h4>
+              <p class="mx-auto mt-0.5 max-w-sm text-xs text-dimmed">
+                Try adjusting your search query or status filter above, or create a new order directly from a DM.
+              </p>
+            </div>
+            <UButton
+              to="/inbox"
+              label="+ Create Order from DM"
+              icon="i-lucide-message-square"
+              color="primary"
+              size="sm"
+              class="cursor-pointer font-bold"
+            />
+          </div>
+        </template>
+      </UTable>
     </div>
 
     <!-- VIEW 2: Kanban Board View (Horizontal Scrollable Container for High Volume) -->

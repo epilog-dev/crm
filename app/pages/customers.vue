@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import type { TableColumn } from '@nuxt/ui'
 
 useSeoMeta({
   title: 'Customers CRM - Instagram DM Buyers',
@@ -11,6 +12,29 @@ const { customers, fetchCustomers } = useCustomers()
 onMounted(() => {
   fetchCustomers()
 })
+
+function igLink(handle: string) {
+  return `https://instagram.com/direct/t/${handle.replace('@', '')}`
+}
+
+const customerColumns: TableColumn<Record<string, unknown>>[] = [
+  { accessorKey: 'name', header: 'Customer' },
+  { accessorKey: 'handle', header: 'Instagram Handle' },
+  { accessorKey: 'phone', header: 'Phone' },
+  { accessorKey: 'totalOrders', header: 'Total Orders' },
+  { accessorKey: 'totalSpent', header: 'Total Value' },
+  { accessorKey: 'address', header: 'Shipping Address' },
+  { id: 'actions', header: '' }
+]
+
+const tableUi = {
+  base: 'table-fixed border-separate border-spacing-0',
+  thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+  tbody: '[&>tr]:last:[&>td]:border-b-0',
+  th: 'py-2 text-xs uppercase first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
+  td: 'border-b border-default text-xs',
+  separator: 'h-0'
+}
 
 // View mode state: 'auto' (Card on small screens, Table on large), 'cards', or 'table'
 const activeView = ref<'auto' | 'cards' | 'table'>('auto')
@@ -135,69 +159,56 @@ const filteredCustomers = computed(() => {
     </div>
 
     <!-- TABLE VIEW (Responsive: Default on large screen `lg:block` under 'auto', or forced 'table') -->
-    <div
-      v-if="activeView === 'table' || activeView === 'auto'"
-      :class="[
-        'border border-default rounded-xl overflow-hidden bg-background',
-        activeView === 'auto' ? 'hidden lg:block' : 'block'
-      ]"
-    >
-      <table class="w-full text-left text-xs">
-        <thead class="bg-elevated/50 border-b border-default text-muted uppercase font-semibold">
-          <tr>
-            <th class="p-3">Customer</th>
-            <th class="p-3">Instagram Handle</th>
-            <th class="p-3">Phone</th>
-            <th class="p-3">Total Orders</th>
-            <th class="p-3">Total Value</th>
-            <th class="p-3">Shipping Address</th>
-            <th class="p-3 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-default">
-          <tr v-for="cust in filteredCustomers" :key="cust.id" class="hover:bg-elevated/20 transition-colors">
-            <td class="p-3 font-bold text-highlighted">
-              <div class="flex items-center gap-2">
-                <UAvatar :src="cust.avatar" :alt="cust.name" size="xs" />
-                <span>{{ cust.name }}</span>
-              </div>
-            </td>
-            <td class="p-3 text-primary font-medium">
-              <a
-                :href="`https://instagram.com/direct/t/${cust.handle.replace('@', '')}`"
-                target="_blank"
-                class="hover:underline flex items-center gap-1"
-              >
-                <UIcon name="i-simple-icons-instagram" class="size-3" />
-                {{ cust.handle }}
-              </a>
-            </td>
-            <td class="p-3 font-mono text-highlighted">{{ cust.phone }}</td>
-            <td class="p-3 font-bold text-highlighted">{{ cust.totalOrders }}</td>
-            <td class="p-3 font-bold text-emerald-500">₹{{ cust.totalSpent.toLocaleString('en-IN') }}</td>
-            <td class="p-3 text-dimmed truncate max-w-[220px]">
-              {{ cust.address }}, {{ cust.pincode }}
-            </td>
-            <td class="p-3 text-right">
-              <UButton
-                :to="`https://instagram.com/direct/t/${cust.handle.replace('@', '')}`"
-                target="_blank"
-                label="DM Buyer"
-                icon="i-simple-icons-instagram"
-                size="xs"
-                color="neutral"
-                variant="outline"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Empty State -->
-      <div v-if="filteredCustomers.length === 0" class="py-12 text-center text-dimmed text-xs space-y-2">
-        <UIcon name="i-lucide-users" class="size-8 mx-auto text-muted" />
-        <p class="font-semibold">No matching customers found</p>
-      </div>
+    <div :class="activeView === 'auto' ? 'hidden lg:block' : (activeView === 'table' ? 'block' : 'hidden')">
+      <UTable :data="filteredCustomers" :columns="customerColumns" :ui="tableUi">
+        <template #name-cell="{ row }">
+          <div class="flex items-center gap-2">
+            <UAvatar :src="row.original.avatar" :alt="row.original.name" size="xs" />
+            <span class="font-bold text-highlighted">{{ row.original.name }}</span>
+          </div>
+        </template>
+        <template #handle-cell="{ row }">
+          <a
+            :href="igLink(row.original.handle)"
+            target="_blank"
+            class="flex items-center gap-1 font-medium text-primary hover:underline"
+          >
+            <UIcon name="i-simple-icons-instagram" class="size-3" />
+            {{ row.original.handle }}
+          </a>
+        </template>
+        <template #phone-cell="{ row }">
+          <span class="font-mono text-highlighted">{{ row.original.phone }}</span>
+        </template>
+        <template #totalOrders-cell="{ row }">
+          <span class="font-bold text-highlighted">{{ row.original.totalOrders }}</span>
+        </template>
+        <template #totalSpent-cell="{ row }">
+          <span class="font-bold text-emerald-500">₹{{ Number(row.original.totalSpent).toLocaleString('en-IN') }}</span>
+        </template>
+        <template #address-cell="{ row }">
+          <span class="block max-w-[220px] truncate text-dimmed">{{ row.original.address }}, {{ row.original.pincode }}</span>
+        </template>
+        <template #actions-cell="{ row }">
+          <div class="text-right">
+            <UButton
+              :to="igLink(row.original.handle)"
+              target="_blank"
+              label="DM Buyer"
+              icon="i-simple-icons-instagram"
+              size="xs"
+              color="neutral"
+              variant="outline"
+            />
+          </div>
+        </template>
+        <template #empty>
+          <div class="space-y-2 py-8 text-center text-xs text-dimmed">
+            <UIcon name="i-lucide-users" class="mx-auto size-8 text-muted" />
+            <p class="font-semibold">No matching customers found</p>
+          </div>
+        </template>
+      </UTable>
     </div>
   </div>
 </template>

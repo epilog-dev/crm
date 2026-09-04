@@ -148,21 +148,7 @@ function handleDisconnect() {
                 <span class="font-bold text-highlighted block">Cash on Delivery (COD)</span>
                 <p class="text-[11px] text-dimmed">Allow buyers to pick COD on order link.</p>
               </div>
-              <button
-                type="button"
-                @click="sellerSettings.codEnabled = !sellerSettings.codEnabled"
-                :class="[
-                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                  sellerSettings.codEnabled ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
-                ]"
-              >
-                <span
-                  :class="[
-                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                    sellerSettings.codEnabled ? 'translate-x-5' : 'translate-x-0'
-                  ]"
-                />
-              </button>
+              <USwitch v-model="sellerSettings.codEnabled" />
             </div>
             <div class="pt-1 flex items-center gap-1.5 text-[11px]">
               <UBadge :color="sellerSettings.codEnabled ? 'success' : 'warning'" variant="subtle" size="xs">
@@ -182,21 +168,7 @@ function handleDisconnect() {
               <span class="font-semibold text-highlighted block">Require payment proof</span>
               <p class="text-[11px] text-dimmed">Buyer must add a UPI reference number (or a screenshot) before placing a prepaid order.</p>
             </div>
-            <button
-              type="button"
-              @click="sellerSettings.requireReceiptUpload = !sellerSettings.requireReceiptUpload"
-              :class="[
-                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                sellerSettings.requireReceiptUpload ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
-              ]"
-            >
-              <span
-                :class="[
-                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                  sellerSettings.requireReceiptUpload ? 'translate-x-5' : 'translate-x-0'
-                ]"
-              />
-            </button>
+            <USwitch v-model="sellerSettings.requireReceiptUpload" class="shrink-0" />
           </div>
 
           <!-- Auto Link DMs -->
@@ -205,21 +177,7 @@ function handleDisconnect() {
               <span class="font-semibold text-highlighted block">Auto-Link DM Messages</span>
               <p class="text-[11px] text-dimmed">Auto-send order link directly inside Instagram chat.</p>
             </div>
-            <button
-              type="button"
-              @click="sellerSettings.autoLinkDms = !sellerSettings.autoLinkDms"
-              :class="[
-                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                sellerSettings.autoLinkDms ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
-              ]"
-            >
-              <span
-                :class="[
-                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                  sellerSettings.autoLinkDms ? 'translate-x-5' : 'translate-x-0'
-                ]"
-              />
-            </button>
+            <USwitch v-model="sellerSettings.autoLinkDms" class="shrink-0" />
           </div>
         </div>
       </div>

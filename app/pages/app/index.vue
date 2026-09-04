@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import type { TableColumn } from '@nuxt/ui'
 
 useSeoMeta({
   title: 'Sales Dashboard - Instagram DM Sales Workspace',
@@ -137,6 +138,24 @@ const metrics = computed(() => ({
 // Quick Recent Activity / Orders
 const recentOrders = computed(() => orders.value.slice(0, 4))
 
+const recentOrderColumns: TableColumn<(typeof orders.value)[number]>[] = [
+  { accessorKey: 'orderCode', header: 'Order ID' },
+  { accessorKey: 'customer', header: 'Customer' },
+  { accessorKey: 'item', header: 'Item' },
+  { accessorKey: 'price', header: 'Price' },
+  { accessorKey: 'status', header: 'Status' }
+]
+
+const recentOrdersTableUi = {
+  base: 'table-fixed border-separate border-spacing-0',
+  thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+  tbody: '[&>tr]:last:[&>td]:border-b-0',
+  tr: 'hover:bg-elevated/20',
+  th: 'py-2 text-[11px] uppercase first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
+  td: 'border-b border-default text-xs',
+  separator: 'h-0'
+}
+
 // Recent DM Activity
 const recentConversations = computed(() => conversations.value.slice(0, 4))
 </script>
@@ -158,21 +177,7 @@ const recentConversations = computed(() => conversations.value.slice(0, 4))
       <div class="flex items-center gap-3 shrink-0 flex-wrap">
         <!-- Focus Mode Toggle Switch -->
         <div class="flex items-center gap-2 p-1.5 rounded-xl border border-default bg-background">
-          <button
-            type="button"
-            @click="isFocusMode = !isFocusMode"
-            :class="[
-              'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-              isFocusMode ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
-            ]"
-          >
-            <span
-              :class="[
-                'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                isFocusMode ? 'translate-x-4' : 'translate-x-0'
-              ]"
-            />
-          </button>
+          <USwitch v-model="isFocusMode" size="sm" />
           <span class="text-xs font-bold text-highlighted flex items-center gap-1">
             <UIcon name="i-lucide-sparkles" class="size-3.5 text-amber-500" />
             Focus Mode
@@ -455,55 +460,34 @@ const recentConversations = computed(() => conversations.value.slice(0, 4))
           </NuxtLink>
         </div>
 
-        <div class="border border-default rounded-xl overflow-hidden bg-background">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-elevated/50 border-b border-default text-muted uppercase font-semibold">
-              <tr>
-                <th class="p-3">Order ID</th>
-                <th class="p-3">Customer</th>
-                <th class="p-3">Item</th>
-                <th class="p-3">Price</th>
-                <th class="p-3">Status</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-default">
-              <tr
-                v-for="ord in recentOrders"
-                :key="ord.id"
-                class="hover:bg-elevated/20 transition-colors"
-              >
-                <td class="p-3 font-mono font-bold text-highlighted">
-                  <NuxtLink :to="ord.orderLink" class="hover:underline text-primary">
-                    {{ ord.orderCode }}
-                  </NuxtLink>
-                </td>
-                <td class="p-3 font-medium text-highlighted">
-                  {{ ord.customer.handle }}
-                </td>
-                <td class="p-3 text-dimmed truncate max-w-[150px]">
-                  {{ ord.item }}
-                </td>
-                <td class="p-3 font-bold text-highlighted">
-                  {{ ord.currency }}{{ ord.price.toLocaleString('en-IN') }}
-                </td>
-                <td class="p-3">
-                  <UBadge
-                    :color="ord.status === 'Paid' ? 'success' : ord.status === 'Awaiting Payment' ? 'warning' : 'neutral'"
-                    variant="subtle"
-                    size="xs"
-                  >
-                    {{ ord.status }}
-                  </UBadge>
-                </td>
-              </tr>
-              <tr v-if="recentOrders.length === 0">
-                <td colspan="5" class="p-6 text-center text-dimmed">
-                  No orders yet. Create one from a DM in the Inbox.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <UTable :data="recentOrders" :columns="recentOrderColumns" :ui="recentOrdersTableUi">
+          <template #orderCode-cell="{ row }">
+            <NuxtLink :to="row.original.orderLink" class="font-mono font-bold text-primary hover:underline">
+              {{ row.original.orderCode }}
+            </NuxtLink>
+          </template>
+          <template #customer-cell="{ row }">
+            <span class="font-medium text-highlighted">{{ row.original.customer.handle }}</span>
+          </template>
+          <template #item-cell="{ row }">
+            <span class="block max-w-[150px] truncate text-dimmed">{{ row.original.item }}</span>
+          </template>
+          <template #price-cell="{ row }">
+            <span class="font-bold text-highlighted">{{ row.original.currency }}{{ row.original.price.toLocaleString('en-IN') }}</span>
+          </template>
+          <template #status-cell="{ row }">
+            <UBadge
+              :color="row.original.status === 'Paid' ? 'success' : row.original.status === 'Awaiting Payment' ? 'warning' : 'neutral'"
+              variant="subtle"
+              size="xs"
+            >
+              {{ row.original.status }}
+            </UBadge>
+          </template>
+          <template #empty>
+            <p class="py-6 text-center text-xs text-dimmed">No orders yet. Create one from a DM in the Inbox.</p>
+          </template>
+        </UTable>
       </div>
 
       <!-- Quick Sales Inbox Sidebar (1 Col) -->
