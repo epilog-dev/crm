@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const steps = [
-  { title: 'Chat like you always do', body: 'A customer finds you on Instagram and messages you. Nothing about that changes.' },
+  { title: 'Chat right inside Plum', body: 'A customer finds you on Instagram and messages you — read it and reply right inside Plum, without switching back to Instagram.' },
   { title: 'They decide to buy', body: 'Turn that conversation into an order right there — no storefront, no catalog to upload first.' },
   { title: 'Send the order link', body: 'Add the item, price and payment option. Plum drops a unique link straight into the chat.' },
   { title: 'They fill in the details', body: 'Name, phone and shipping address — typed by the buyer. No more typos, no more asking twice.' },

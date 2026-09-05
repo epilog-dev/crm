@@ -53,7 +53,7 @@ const faqs = [
 
     <p data-reveal class="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
       Still unsure?
-      <NuxtLink to="/register" class="font-semibold text-violet-600 hover:underline dark:text-violet-400">Start free</NuxtLink>
+      <NuxtLink to="/register" class="font-semibold text-violet-600 hover:underline dark:text-violet-400">Try the demo</NuxtLink>
       and poke around — there's nothing to set up first.
     </p>
   </section>

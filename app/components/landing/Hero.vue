@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
-const email = ref('')
-
-function goRegister() {
-  return navigateTo({ path: '/register', query: email.value ? { email: email.value } : {} })
-}
+const { email, status, errorMessage, submit } = useWaitlist('hero')
 </script>
 
 <template>
@@ -32,9 +26,9 @@ function goRegister() {
     </p>
 
     <h1 data-reveal class="font-display mx-auto mt-6 max-w-[19ch] text-[2.7rem] font-bold leading-[1.05] tracking-[-0.03em] text-balance sm:text-6xl sm:leading-[1.02]">
-      Every Instagram order, in
+      From Instagram DM to
       <span class="relative whitespace-nowrap">
-        one place.
+        delivered.
         <svg class="squiggle absolute -bottom-1.5 left-0 w-full text-pink-500" viewBox="0 0 220 14" fill="none" preserveAspectRatio="none" aria-hidden="true">
           <path d="M3 8c26-9 52 5 79-1s52-8 79-1 39 7 56 2" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
         </svg>
@@ -42,14 +36,15 @@ function goRegister() {
     </h1>
 
     <p data-reveal class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-600 text-pretty dark:text-zinc-300" style="transition-delay: 60ms">
-      You sell in Instagram DMs — no catalog, no checkout page. Plum turns each conversation into a
-      trackable order the buyer fills in, pays for on UPI, and follows themselves.
+      You already sell in Instagram DMs — Plum doesn't need a storefront or a product catalog. Reply to
+      messages right inside the app, then send a link: the buyer adds their address, pays on UPI, and tracks the order themselves.
     </p>
 
     <div data-reveal class="mt-9" style="transition-delay: 120ms">
       <form
+        v-if="status !== 'success'"
         class="mx-auto flex w-full max-w-md flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-2 sm:rounded-full sm:border sm:border-black/10 sm:bg-white sm:p-1.5 sm:pl-5 sm:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(80,40,160,0.25)] dark:sm:border-white/10 dark:sm:bg-zinc-900"
-        @submit.prevent="goRegister"
+        @submit.prevent="submit"
       >
         <label for="hero-email" class="sr-only">Your email</label>
         <input
@@ -63,14 +58,19 @@ function goRegister() {
         >
         <button
           type="submit"
-          class="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
+          :disabled="status === 'loading'"
+          class="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Start free
+          {{ status === 'loading' ? 'Joining…' : 'Join Early Access' }}
           <UIcon name="i-lucide-arrow-right" class="size-4" />
         </button>
       </form>
+      <p v-else class="mx-auto max-w-md rounded-full border border-emerald-200 bg-emerald-50/60 px-5 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/[0.08] dark:text-emerald-400">
+        You're on the list — we'll email you.
+      </p>
+      <p v-if="status === 'error'" class="mt-2 text-sm font-semibold text-rose-600 dark:text-rose-400">{{ errorMessage }}</p>
       <p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-        Free to start · no card · your UPI, your couriers ·
+        Free to join · no card · currently in development ·
         <a href="#how" class="font-semibold text-violet-600 hover:underline dark:text-violet-400">see how it works ↓</a>
       </p>
     </div>

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "skills": {
+    "copywriting": {
+      "source": "Infrasity-Labs/dev-gtm-claude-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "marketing-skills/copywriting/SKILL.md",
+      "computedHash": "05a86a44d1208605485b61657bb73f1db8570f9f190cb0fb25cbe8750afead81"
+    }
+  }
+}

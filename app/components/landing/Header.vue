@@ -5,7 +5,7 @@ const navLinks = [
   { label: 'The problem', href: '#problem' },
   { label: 'How it works', href: '#how' },
   { label: 'Why Plum', href: '#why' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'Early access', href: '#early-access' },
   { label: 'FAQ', href: '#faq' }
 ]
 const mobileMenuOpen = ref(false)
@@ -33,9 +33,9 @@ const mobileMenuOpen = ref(false)
         <NuxtLink to="/login" class="hidden rounded-lg px-3 py-2 text-sm font-semibold text-zinc-600 transition-colors hover:text-zinc-900 sm:block dark:text-zinc-300 dark:hover:text-white">
           Log in
         </NuxtLink>
-        <NuxtLink to="/register" class="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-violet-700">
-          Start free
-        </NuxtLink>
+        <a href="#early-access" class="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-violet-700">
+          Join Early Access
+        </a>
 
         <!-- Mobile menu -->
         <USlideover
@@ -71,12 +71,19 @@ const mobileMenuOpen = ref(false)
               >
                 Log in
               </NuxtLink>
-              <NuxtLink
-                to="/register"
+              <a
+                href="#early-access"
                 class="rounded-full bg-violet-600 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-violet-700"
                 @click="mobileMenuOpen = false"
               >
-                Start free
+                Join Early Access
+              </a>
+              <NuxtLink
+                to="/register"
+                class="rounded-full border border-black/10 py-2.5 text-center text-sm font-semibold text-zinc-700 transition-colors hover:bg-black/[0.03] dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/5"
+                @click="mobileMenuOpen = false"
+              >
+                Try the demo
               </NuxtLink>
             </div>
           </template>

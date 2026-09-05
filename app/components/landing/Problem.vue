@@ -27,7 +27,7 @@ const afterList = ['One order link per buyer', 'Payment proof attached to the or
     <div data-reveal class="mx-auto max-w-2xl text-center">
       <p class="text-xs font-bold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-400">The problem</p>
       <h2 class="font-display mt-3 text-3xl font-semibold leading-[1.1] tracking-[-0.02em] text-balance sm:text-[2.6rem]">
-        The problem isn't getting customers. It's keeping track of the ones who actually bought.
+        Getting customers isn't the hard part. Keeping track of who actually bought is.
       </h2>
     </div>
 

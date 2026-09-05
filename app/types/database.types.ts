@@ -124,6 +124,24 @@ export type Database = {
           },
         ]
       }
+      feature_votes: {
+        Row: {
+          created_at: string
+          feature_key: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          feature_key: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          feature_key?: string
+          id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string
@@ -172,6 +190,73 @@ export type Database = {
           },
           {
             foreignKeyName: "messages_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          badge_color: string
+          conversation_id: string | null
+          created_at: string
+          icon: string
+          id: string
+          link: string | null
+          message: string
+          order_id: string | null
+          read: boolean
+          store_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          badge_color?: string
+          conversation_id?: string | null
+          created_at?: string
+          icon?: string
+          id?: string
+          link?: string | null
+          message: string
+          order_id?: string | null
+          read?: boolean
+          store_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          badge_color?: string
+          conversation_id?: string | null
+          created_at?: string
+          icon?: string
+          id?: string
+          link?: string | null
+          message?: string
+          order_id?: string | null
+          read?: boolean
+          store_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
@@ -264,6 +349,7 @@ export type Database = {
           id: string
           order_code: string
           payment_method: string | null
+          payment_ref: string | null
           payment_status: string
           receipt_uploaded: boolean
           receipt_url: string | null
@@ -284,6 +370,7 @@ export type Database = {
           id?: string
           order_code?: string
           payment_method?: string | null
+          payment_ref?: string | null
           payment_status?: string
           receipt_uploaded?: boolean
           receipt_url?: string | null
@@ -304,6 +391,7 @@ export type Database = {
           id?: string
           order_code?: string
           payment_method?: string | null
+          payment_ref?: string | null
           payment_status?: string
           receipt_uploaded?: boolean
           receipt_url?: string | null
@@ -334,6 +422,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pricing_validation_responses: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          monthly_amount: number | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          monthly_amount?: number | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          monthly_amount?: number | null
+        }
+        Relationships: []
       }
       product_variants: {
         Row: {
@@ -534,11 +643,80 @@ export type Database = {
         }
         Relationships: []
       }
+      suggestions: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+        }
+        Relationships: []
+      }
+      waitlist_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_or_create_store: {
+        Args: never
+        Returns: {
+          auto_link_dms: boolean
+          cod_enabled: boolean
+          created_at: string
+          id: string
+          instagram_avatar_url: string | null
+          instagram_business_id: string | null
+          instagram_connected: boolean
+          instagram_connected_at: string | null
+          instagram_followers_count: number | null
+          instagram_handle: string | null
+          instagram_username: string | null
+          name: string
+          require_receipt_upload: boolean
+          updated_at: string
+          upi_vpa: string | null
+          webhook_status: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "stores"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       is_store_member: { Args: { _store_id: string }; Returns: boolean }
       is_store_owner: { Args: { _store_id: string }; Returns: boolean }
     }

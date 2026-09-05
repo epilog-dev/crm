@@ -1,8 +1,9 @@
 <script setup lang="ts">
 const diffs = [
+  { title: 'Reply to DMs without leaving Plum', body: 'Read every Instagram message and answer it right inside the app — no switching tabs mid-conversation, no losing a buyer while you dig for the right thread.' },
   { title: 'No product catalog', body: 'Never upload 200 products before your first sale. An order exists only when someone actually buys.' },
   { title: 'Instagram stays your storefront', body: 'Keep posting Reels, Stories and photos. Keep talking in DMs. Plum sits quietly behind it.' },
-  { title: 'No AI guessing your orders', body: 'You decide when a conversation becomes an order — nothing gets mistaken for a sale by an algorithm.' },
+  { title: 'No AI guessing your orders', body: 'You decide when a conversation becomes an order — no algorithm mistakes it for a sale.' },
   { title: 'UPI + COD, built in', body: 'Buyers pay straight to your UPI or choose COD. No payment gateway, no per-order cut.' }
 ]
 </script>
@@ -12,7 +13,7 @@ const diffs = [
     <div data-reveal class="mx-auto max-w-2xl text-center">
       <p class="text-xs font-bold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-400">Why Plum</p>
       <h2 class="font-display mt-3 text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-[2.6rem]">
-        Built for the way Instagram sellers actually sell.
+        Built for the way Instagram sellers already sell.
       </h2>
     </div>
 

@@ -9,22 +9,25 @@
         Your DMs can stay messy.<br class="hidden sm:block"> Your orders don't have to.
       </h2>
       <p class="relative mx-auto mt-4 max-w-lg text-violet-100">
-        Keep selling on Instagram exactly as you do. Let Plum take care of the orders.
+        You keep selling in the DMs. Plum makes sure no order gets buried thirty chats up.
       </p>
       <div class="relative mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <NuxtLink
-          to="/register"
+        <a
+          href="#early-access"
           class="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-violet-700 transition-colors hover:bg-violet-50 sm:w-auto"
         >
-          Start free <UIcon name="i-lucide-arrow-right" class="size-4" />
-        </NuxtLink>
+          Join Early Access <UIcon name="i-lucide-arrow-right" class="size-4" />
+        </a>
         <NuxtLink
-          to="/login"
+          to="/register"
           class="inline-flex w-full items-center justify-center rounded-full px-7 py-3.5 text-sm font-semibold text-white ring-1 ring-white/40 transition-colors hover:bg-white/10 sm:w-auto"
         >
-          I already sell with Plum
+          Try the demo
         </NuxtLink>
       </div>
+      <p class="relative mt-4 text-xs text-violet-200">
+        Already testing Plum? <NuxtLink to="/login" class="font-semibold underline underline-offset-2 hover:text-white">Log in</NuxtLink>
+      </p>
     </div>
   </section>
 </template>

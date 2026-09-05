@@ -6,12 +6,12 @@ definePageMeta({ layout: false, auth: false })
 const root = ref<HTMLElement | null>(null)
 
 useSeoMeta({
-  title: 'Plum — The order desk for Instagram sellers',
+  title: 'Plum — Reply to Instagram DMs and manage orders, in one place',
   description:
-    'You sell in Instagram DMs. Plum turns every conversation into a trackable order — the buyer adds their own address, pays your UPI, and follows the status. No storefront, no catalog, no gateway.',
-  ogTitle: 'Instagram is your storefront. Plum keeps the orders straight.',
+    'Plum is a workspace for Instagram sellers: read and reply to DMs without leaving the app, then turn each conversation into a trackable order. Currently in early access — join the waitlist.',
+  ogTitle: 'Your Instagram DMs, finally organised.',
   ogDescription:
-    'Plum turns DM conversations into organised, trackable orders. Built for thrift, handmade, jewellery and boutique sellers in India.'
+    'Read every DM and reply from inside Plum, then turn confirmed buyers into trackable orders. Built for thrift, handmade, jewellery and boutique sellers in India. Now in early access.'
 })
 
 useHead({
@@ -106,7 +106,9 @@ onUnmounted(() => cleanupReveal?.())
       <LandingProblem />
       <LandingHowItWorks />
       <LandingWhyPlum />
-      <LandingPricing />
+      <LandingValidationPoll />
+      <LandingSuggestionBox />
+      <LandingEarlyAccess />
       <LandingFaq />
       <LandingFinalCta />
       <LandingFooter />
