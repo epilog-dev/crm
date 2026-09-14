@@ -1,8 +1,8 @@
-# Instagram DM → Order Management Workspace (Plum CRM)
+# Instagram DM → Order Management Workspace (DMSell)
 
 ## Executive Summary
 
-**Plum** is a lightweight, dedicated sales workspace built specifically for small Instagram sellers (thrift stores, clothing boutiques, handmade craft shops, customized gifts, etc.) who take orders directly through Instagram DMs.
+**DMSell** is a lightweight, dedicated sales workspace built specifically for small Instagram sellers (thrift stores, clothing boutiques, handmade craft shops, customized gifts, etc.) who take orders directly through Instagram DMs.
 
 ---
 
@@ -34,13 +34,13 @@ Small Instagram sellers face a common operational bottleneck:
       │
 [2. Inquiry]   ──> Customer DMs seller: "How much for the Nike Jacket in Medium?"
       │
-[3. Sync]      ──> DM appears live in Plum Inbox via Meta Instagram Professional API
+[3. Sync]      ──> DM appears live in DMSell Inbox via Meta Instagram Professional API
       │
-[4. Chat]      ──> Seller chats with buyer from Plum Inbox using Quick Reply Snippets
+[4. Chat]      ──> Seller chats with buyer from DMSell Inbox using Quick Reply Snippets
       │
 [5. Intent]    ──> Customer says: "I'll take it."
       │
-[6. Order]     ──> Seller clicks [+ Create Order] inside Plum Inbox
+[6. Order]     ──> Seller clicks [+ Create Order] inside DMSell Inbox
       │               • Auto-attaches buyer handle (@maria)
       │               • Seller enters: Item: Nike Jacket (M) | Price: ₹1,500
       │               • App generates unique link: https://crm.app/order/ORD-1082
@@ -101,4 +101,4 @@ To maintain extreme focus and simplicity, the platform explicitly avoids:
 
 > **"Stop losing sales in your Instagram DMs."**
 >
-> Plum provides Instagram sellers with a dedicated, distraction-free workspace that sits cleanly between Instagram DMs and courier fulfillment.
+> DMSell provides Instagram sellers with a dedicated, distraction-free workspace that sits cleanly between Instagram DMs and courier fulfillment.

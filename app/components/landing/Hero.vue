@@ -36,7 +36,7 @@ const { email, status, errorMessage, submit } = useWaitlist('hero')
     </h1>
 
     <p data-reveal class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-600 text-pretty dark:text-zinc-300" style="transition-delay: 60ms">
-      You already sell in Instagram DMs — Plum doesn't need a storefront or a product catalog. Reply to
+      You already sell in Instagram DMs — DMSell doesn't need a storefront or a product catalog. Reply to
       messages right inside the app, then send a link: the buyer adds their address, pays on UPI, and tracks the order themselves.
     </p>
 
@@ -54,7 +54,7 @@ const { email, status, errorMessage, submit } = useWaitlist('hero')
           inputmode="email"
           autocomplete="email"
           placeholder="you@yourstore.com"
-          class="min-w-0 flex-1 rounded-full border border-black/10 bg-white px-5 py-3 text-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-violet-400 sm:border-0 sm:bg-transparent sm:p-0 sm:text-base sm:focus:border-0 dark:border-white/10 dark:bg-zinc-900 dark:sm:bg-transparent"
+          class="min-w-0 rounded-full md:rounded-none  flex-1  border border-black/10 bg-white px-5 py-3 text-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-violet-400 sm:border-0 sm:bg-transparent sm:p-0 sm:text-base sm:focus:border-0 dark:border-white/10 dark:bg-zinc-900 dark:sm:bg-transparent"
         >
         <button
           type="submit"

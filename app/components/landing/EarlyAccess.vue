@@ -10,7 +10,7 @@ const { email, status, errorMessage, submit } = useWaitlist('early_access')
         Be one of the first sellers to try it.
       </h2>
       <p class="mt-4 text-zinc-600 dark:text-zinc-300">
-        Plum is in active development — built alongside real Instagram sellers, not for them. Join the list and we'll email you when your store gets a seat.
+        DMSell is in active development — built alongside real Instagram sellers, not for them. Join the list and we'll email you when your store gets a seat.
       </p>
     </div>
 

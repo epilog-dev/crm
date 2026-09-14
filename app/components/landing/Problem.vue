@@ -58,7 +58,7 @@ const afterList = ['One order link per buyer', 'Payment proof attached to the or
         <p class="mt-4 font-display text-lg font-semibold text-rose-600 dark:text-rose-400">Six places. Zero certainty.</p>
       </div>
       <div class="rounded-2xl border border-violet-200 bg-violet-50/60 p-6 dark:border-violet-500/25 dark:bg-violet-500/[0.08]">
-        <p class="text-xs font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">With Plum</p>
+        <p class="text-xs font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">With DMSell</p>
         <ul class="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-200">
           <li v-for="a in afterList" :key="a" class="flex items-center gap-2">
             <UIcon name="i-lucide-check" class="size-4 shrink-0 text-emerald-500" /> {{ a }}

@@ -56,7 +56,7 @@
   - 🥇 **Tier 3: Power Store** (30–100 Orders)
   - 👑 **Tier 4: Instagram Elite** (100+ Orders)
 - **🏅 Unlockable Achievement Badges**: Earn milestone badges (*First DM Order*, *Fast Converter*, *Power Store*, *100 DM Club*).
-- **📲 Shareable Instagram Story Graphics Modal**: Sellers can click `[ Share to IG Story 📲 ]` on any unlocked badge to open a beautifully styled graphic card optimized for screenshotting & posting to their store's Instagram Story (driving viral word-of-mouth growth for Plum).
+- **📲 Shareable Instagram Story Graphics Modal**: Sellers can click `[ Share to IG Story 📲 ]` on any unlocked badge to open a beautifully styled graphic card optimized for screenshotting & posting to their store's Instagram Story (driving viral word-of-mouth growth for DMSell).
 - **Seller Setup Progress Checklist**: Interactive 4-step checklist with a dynamic percentage progress bar (`3 of 4 Completed - 75%`).
 - **KPI Metrics Grid**: Live tracking of Total Sales (₹), Pending Payments, Conversion Rate (DM → Order), and Active DM counters.
 
@@ -67,7 +67,7 @@
 
 ### 7. Layout & Navigation UX
 - **Location**: [`app/layouts/default.vue`](file:///Users/moonshiner/Workspace/dummy-projects/crm/app/layouts/default.vue) & [`app/composables/useNavigation.ts`](file:///Users/moonshiner/Workspace/dummy-projects/crm/app/composables/useNavigation.ts)
-- **Restored Plum Brand Identity**: Clean sidebar header with Plum logo (`P`).
+- **Restored DMSell Brand Identity**: Clean sidebar header with DMSell logo (`P`).
 - **Sidebar Background Contrast**: Subtle neutral shading in light mode (`bg-neutral-100/70`) and dark mode (`dark:bg-neutral-900/90`).
 - **Numeric Activity Badges**: Clean color-coded counters on navigation items (`Inbox: 8`, `Orders: 3`, `Connect Instagram: ✓`).
 - **Live Notifications Slideover**: Full notifications drawer with unread badges, mark-all-as-read, dismiss actions, and auto-closing on link clicks.

@@ -60,7 +60,7 @@ async function submit() {
         Would you actually pay for this?
       </h2>
       <p class="mt-4 text-zinc-600 dark:text-zinc-300">
-        Plum is still in early access. Your honest answer — yes, maybe, or no — decides what we build next, not what we hope you'll say.
+        DMSell is still in early access. Your honest answer — yes, maybe, or no — decides what we build next, not what we hope you'll say.
       </p>
     </div>
 

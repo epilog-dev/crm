@@ -1,6 +1,6 @@
 # Product Roadmap & Implementation Order
 
-This document outlines the recommended step-by-step roadmap for building the **Plum** Instagram DM → Order Management SaaS.
+This document outlines the recommended step-by-step roadmap for building the **DMSell** Instagram DM → Order Management SaaS.
 
 ---
 

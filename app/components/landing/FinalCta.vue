@@ -9,7 +9,7 @@
         Your DMs can stay messy.<br class="hidden sm:block"> Your orders don't have to.
       </h2>
       <p class="relative mx-auto mt-4 max-w-lg text-violet-100">
-        You keep selling in the DMs. Plum makes sure no order gets buried thirty chats up.
+        You keep selling in the DMs. DMSell makes sure no order gets buried thirty chats up.
       </p>
       <div class="relative mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <a
@@ -26,7 +26,7 @@
         </NuxtLink>
       </div>
       <p class="relative mt-4 text-xs text-violet-200">
-        Already testing Plum? <NuxtLink to="/login" class="font-semibold underline underline-offset-2 hover:text-white">Log in</NuxtLink>
+        Already testing DMSell? <NuxtLink to="/login" class="font-semibold underline underline-offset-2 hover:text-white">Log in</NuxtLink>
       </p>
     </div>
   </section>

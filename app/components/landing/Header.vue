@@ -4,7 +4,7 @@ import { ref } from 'vue'
 const navLinks = [
   { label: 'The problem', href: '#problem' },
   { label: 'How it works', href: '#how' },
-  { label: 'Why Plum', href: '#why' },
+  { label: 'Why DMSell', href: '#why' },
   { label: 'Early access', href: '#early-access' },
   { label: 'FAQ', href: '#faq' }
 ]
@@ -15,11 +15,11 @@ const mobileMenuOpen = ref(false)
   <header class="sticky top-0 z-40 border-b border-black/[0.06] bg-[#f7f5f1]/80 backdrop-blur-md dark:border-white/[0.06] dark:bg-zinc-950/80">
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
       <NuxtLink to="/" class="flex items-center gap-2.5">
-        <span class="flex size-7 items-center justify-center rounded-lg bg-violet-600 text-sm font-black text-white">P</span>
-        <span class="font-display text-xl font-semibold tracking-tight">Plum</span>
+        <LogoMark :size="28" />
+        <span class="font-display text-xl font-semibold tracking-tight">DMSell</span>
       </NuxtLink>
 
-      <nav class="hidden items-center gap-8 text-sm font-medium text-zinc-500 dark:text-zinc-400 md:flex">
+      <nav class="hidden items-center gap-8 text-sm font-medium text-zinc-500 dark:text-zinc-400 lg:flex">
         <a
           v-for="link in navLinks"
           :key="link.href"
@@ -49,7 +49,7 @@ const mobileMenuOpen = ref(false)
             variant="ghost"
             size="sm"
             aria-label="Open menu"
-            class="cursor-pointer md:hidden"
+            class="cursor-pointer lg:hidden"
           />
 
           <template #body>

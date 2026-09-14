@@ -4,6 +4,14 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxt/eslint", "@nuxt/ui", "@nuxtjs/supabase"],
   css: ["~/assets/css/main.css"],
+  app: {
+    head: {
+      link: [
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        { rel: "alternate icon", href: "/favicon.ico" },
+      ],
+    },
+  },
   // colorMode: {
   //   preference: 'light',
   //   fallback: 'light'

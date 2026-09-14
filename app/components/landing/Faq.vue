@@ -13,16 +13,16 @@ const faqs = [
     content: 'Neither. Buyers pay straight to your UPI and attach the screenshot, or choose cash on delivery. You mark the order paid. Every rupee is yours.'
   },
   {
-    label: 'Does Plum read my DMs or decide what counts as an order?',
+    label: 'Does DMSell read my DMs or decide what counts as an order?',
     content: 'No. You decide when a conversation becomes an order. Nothing is auto-detected, and no algorithm turns a "how much?" into a sale.'
   },
   {
     label: 'Can I keep selling exactly the way I do now?',
-    content: 'Yes. Keep posting Reels and Stories, keep chatting in DMs. Plum only steps in once someone is ready to buy.'
+    content: 'Yes. Keep posting Reels and Stories, keep chatting in DMs. DMSell only steps in once someone is ready to buy.'
   },
   {
     label: 'What about shipping and courier labels?',
-    content: 'Copy the address into any courier app in one tap, or print a 4×6 label from the order. Plum never locks you to a single courier.'
+    content: 'Copy the address into any courier app in one tap, or print a 4×6 label from the order. DMSell never locks you to a single courier.'
   }
 ]
 </script>

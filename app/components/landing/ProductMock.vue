@@ -220,7 +220,7 @@ onUnmounted(() => {
 
             <div class="mt-3 flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
               <UIcon name="i-lucide-check" class="size-3.5 shrink-0" />
-              Link sent in the DM · plum.so/order/ORD-1082
+              Link sent in the DM · dmsell.in/order/ORD-1082
             </div>
           </div>
         </div>

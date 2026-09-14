@@ -575,7 +575,7 @@ const recentConversations = computed(() => conversations.value.slice(0, 4))
 
             <div class="pt-3 border-t border-white/20 flex items-center justify-between text-[11px] font-semibold text-white/90">
               <span>@thrift_store_india</span>
-              <span class="bg-black/30 px-2 py-0.5 rounded">Plum Verified</span>
+              <span class="bg-black/30 px-2 py-0.5 rounded">DMSell Verified</span>
             </div>
           </div>
 
