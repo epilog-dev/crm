@@ -22,13 +22,14 @@ export function useStore() {
   const store = useState<Store | null>('currentStore', () => null)
   const pending = useState<boolean>('currentStorePending', () => false)
 
-  async function fetchStore() {
-    pending.value = true
+  /** `silent` skips the `pending` flag -- for background refreshes that shouldn't show loading UI. */
+  async function fetchStore(options: { silent?: boolean } = {}) {
+    if (!options.silent) pending.value = true
     try {
       store.value = await $fetch<Store>('/api/store')
       return store.value
     } finally {
-      pending.value = false
+      if (!options.silent) pending.value = false
     }
   }
 

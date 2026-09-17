@@ -14,8 +14,7 @@ const { orders, pending, fetchOrders, updateOrderStatus, updatePaymentStatus } =
 const toast = useToast()
 const overlay = useOverlay()
 
-// After hydration on first load, immediately on client-side navigation.
-onNuxtReady(() => {
+onMounted(() => {
   fetchOrders()
 })
 

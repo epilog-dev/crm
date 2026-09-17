@@ -10,8 +10,7 @@ const { store, fetchStore } = useStore()
 const { orders, fetchOrders } = useOrders()
 const { conversations, fetchConversations } = useConversations()
 
-// After hydration on first load, immediately on client-side navigation.
-onNuxtReady(() => {
+onMounted(() => {
   if (!store.value) fetchStore()
   fetchOrders()
   fetchConversations()

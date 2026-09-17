@@ -20,5 +20,6 @@ withDefaults(defineProps<{
     :size="size"
     :to="linkToInstagram && handle ? instagramDmUrl(handle) : undefined"
     :target="linkToInstagram ? '_blank' : undefined"
+    :ui="{ wrapper: 'min-w-0', name: 'truncate', description: 'truncate' }"
   />
 </template>

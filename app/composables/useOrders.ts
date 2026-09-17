@@ -61,14 +61,15 @@ export function useOrders() {
   const orders = useState<OrderViewModel[]>('orders', () => [])
   const pending = useState<boolean>('ordersPending', () => false)
 
-  async function fetchOrders() {
-    pending.value = true
+  /** `silent` skips the `pending` flag -- for background refreshes that shouldn't show loading UI. */
+  async function fetchOrders(options: { silent?: boolean } = {}) {
+    if (!options.silent) pending.value = true
     try {
       const data = await $fetch<any[]>('/api/orders')
       orders.value = data.map(mapOrder)
       return orders.value
     } finally {
-      pending.value = false
+      if (!options.silent) pending.value = false
     }
   }
 

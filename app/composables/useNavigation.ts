@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import type { NavigationMenuItem, DropdownMenuItem } from '@nuxt/ui'
 import { useStore } from './useStore'
 import { useConversations } from './useConversations'
@@ -11,14 +11,13 @@ export function useNavigation() {
   const supabase = useSupabaseClient()
   const router = useRouter()
 
-  // Warm the badge counts once the whole app has hydrated. Kicking these off
-  // any earlier (setup, or even onMounted -- pages are lazy chunks that hydrate
-  // after the layout mounts) flips the `pending` flags mid-hydration and Vue
-  // reports class mismatches on loading indicators.
-  onNuxtReady(() => {
-    if (!store.value) fetchStore()
-    if (!conversations.value.length) fetchConversations()
-    if (!orders.value.length) fetchOrders()
+  // Warm the sidebar badge counts. These are silent: pages are lazy chunks
+  // that can still be hydrating when the layout mounts, and toggling the
+  // shared `pending` flags at that point makes SSR and client markup differ.
+  onMounted(() => {
+    if (!store.value) fetchStore({ silent: true })
+    if (!conversations.value.length) fetchConversations({ silent: true })
+    if (!orders.value.length) fetchOrders({ silent: true })
   })
 
   const unreadDmCount = computed(() => conversations.value.reduce((sum, c) => sum + c.unreadCount, 0))

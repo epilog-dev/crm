@@ -70,8 +70,9 @@ export function useConversations() {
     return conversations.value.find(c => c.id === id)
   }
 
-  async function fetchConversations() {
-    pending.value = true
+  /** `silent` skips the `pending` flag -- for background refreshes that shouldn't show loading UI. */
+  async function fetchConversations(options: { silent?: boolean } = {}) {
+    if (!options.silent) pending.value = true
     try {
       const data = await $fetch<any[]>('/api/conversations')
       const existing = new Map(conversations.value.map(c => [c.id, c]))
@@ -86,7 +87,7 @@ export function useConversations() {
       })
       return conversations.value
     } finally {
-      pending.value = false
+      if (!options.silent) pending.value = false
     }
   }
 
@@ -170,7 +171,7 @@ export function useConversations() {
     const conversation = find(row.conversation_id)
     if (!conversation) {
       // Thread we haven't seen yet (first DM from a new buyer) -- pull the list.
-      fetchConversations()
+      fetchConversations({ silent: true })
       return
     }
     if (!conversation.loaded) return // will be fetched when opened
@@ -191,7 +192,7 @@ export function useConversations() {
   function applyConversationChange(row: any) {
     const conversation = find(row.id)
     if (!conversation) {
-      fetchConversations()
+      fetchConversations({ silent: true })
       return
     }
     conversation.name = row.instagram_name || row.instagram_handle
@@ -215,15 +216,19 @@ export function useConversations() {
 
     const startPolling = () => {
       if (pollTimer) return
-      pollTimer = setInterval(() => { fetchConversations().catch(() => {}) }, LIST_POLL_MS)
+      pollTimer = setInterval(() => { fetchConversations({ silent: true }).catch(() => {}) }, LIST_POLL_MS)
     }
     const stopPolling = () => {
       if (pollTimer) clearInterval(pollTimer)
       pollTimer = null
     }
 
+    // Unique topic per subscription: `supabase.channel()` hands back an existing
+    // channel with the same name, and `removeChannel()` only deregisters it
+    // after its async unsubscribe -- so a quick unmount/remount (or HMR) would
+    // otherwise try to attach callbacks to a channel that's already closing.
     channel = supabase
-      .channel(`inbox:${storeId}`)
+      .channel(`inbox:${storeId}:${Date.now().toString(36)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, (payload) => {
         applyIncomingMessage(payload.new)
         opts.onNewMessage?.(payload.new)
@@ -241,7 +246,7 @@ export function useConversations() {
         if (ok) {
           stopPolling()
           // Catch anything that landed while we were disconnected.
-          fetchConversations().catch(() => {})
+          fetchConversations({ silent: true }).catch(() => {})
         } else {
           startPolling()
         }
