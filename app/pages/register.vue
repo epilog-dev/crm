@@ -2,7 +2,6 @@
 definePageMeta({ layout: false, auth: false })
 
 const supabase = useSupabaseClient()
-const router = useRouter()
 
 const state = reactive({
   email: '',

@@ -29,7 +29,10 @@ let stopRealtime: (() => void) | null = null
 
 onMounted(async () => {
   await Promise.all([fetchConversations(), store.value ? Promise.resolve() : fetchStore()])
-  if (!activeChatId.value && conversations.value[0]) selectChat(conversations.value[0].id)
+  // Desktop shows list + thread side by side, so open the newest thread. On
+  // phones the thread replaces the list, so land on the list instead.
+  const sideBySide = window.matchMedia('(min-width: 768px)').matches
+  if (sideBySide && !activeChatId.value && conversations.value[0]) selectChat(conversations.value[0].id)
   if (store.value?.id) stopRealtime = subscribe(store.value.id)
 })
 
