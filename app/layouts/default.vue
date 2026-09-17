@@ -10,6 +10,9 @@ useSeoMeta({
 });
 
 const { notifications, unreadCount, fetchNotifications, markRead, markAllRead, dismiss } = useNotifications()
+const { store } = useStore()
+const igConnected = computed(() => !!store.value?.instagram_connected)
+const igHandle = computed(() => store.value?.instagram_username ? `@${store.value.instagram_username}` : '')
 
 const POLL_INTERVAL_MS = 20000
 let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -117,10 +120,22 @@ const customSearchGroups = [
         </template>
 
         <template #right>
-          <!-- Meta API Live Connection Health Badge -->
-          <NuxtLink to="/settings" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-all">
-            <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Meta API Live (@thrift_store_india)</span>
+          <!-- Instagram connection health badge -->
+          <NuxtLink
+            v-if="igConnected"
+            to="/settings"
+            class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-all"
+          >
+            <span class="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Instagram connected ({{ igHandle }})</span>
+          </NuxtLink>
+          <NuxtLink
+            v-else
+            to="/settings"
+            class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-all"
+          >
+            <span class="size-2 rounded-full bg-amber-500" />
+            <span>Instagram not connected</span>
           </NuxtLink>
 
           <!-- NOTIFICATIONS SLIDEOVER -->

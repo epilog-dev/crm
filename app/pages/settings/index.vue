@@ -5,30 +5,81 @@ useSeoMeta({
 })
 
 const { sellerSettings } = useSellerSettings()
+const { store, fetchStore } = useStore()
+const toast = useToast()
+const route = useRoute()
+const router = useRouter()
 
-const isConnected = ref(true)
-const accountInfo = ref({
-  username: '@thrift_store_india',
-  name: 'Retro Thrift Store',
-  followers: '14.2K',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-  connectedAt: '2026-08-15',
-  webhookStatus: 'Active'
-})
+const isConnected = computed(() => !!store.value?.instagram_connected)
+const isOwner = computed(() => (store.value?.role ?? 'owner') === 'owner')
+
+const accountInfo = computed(() => ({
+  username: store.value?.instagram_username ? `@${store.value.instagram_username}` : '',
+  name: store.value?.name ?? '',
+  followers: formatFollowers(store.value?.instagram_followers_count),
+  avatar: store.value?.instagram_avatar_url ?? undefined,
+  connectedAt: store.value?.instagram_connected_at
+    ? new Date(store.value.instagram_connected_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '',
+  webhookActive: store.value?.webhook_status === 'active'
+}))
+
+function formatFollowers(n: number | null | undefined) {
+  if (n == null) return '—'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
+
+function errorMessage(err: unknown) {
+  const e = err as { data?: { message?: string }, message?: string }
+  return e?.data?.message || e?.message || 'Something went wrong'
+}
 
 const isConnecting = ref(false)
+const isDisconnecting = ref(false)
 
 function handleConnect() {
   isConnecting.value = true
-  setTimeout(() => {
-    isConnected.value = true
-    isConnecting.value = false
-  }, 1200)
+  // Full-page redirect: the server builds the Meta consent URL and Meta sends
+  // the seller back to /api/instagram/callback → /settings?ig=...
+  window.location.href = '/api/instagram/connect'
 }
 
-function handleDisconnect() {
-  isConnected.value = false
+async function handleDisconnect() {
+  isDisconnecting.value = true
+  try {
+    const updated = await $fetch<typeof store.value>('/api/instagram/disconnect', { method: 'POST' })
+    store.value = updated
+    toast.add({ title: 'Instagram disconnected', icon: 'i-lucide-unplug', color: 'neutral' })
+  } catch (err) {
+    toast.add({ title: 'Could not disconnect', description: errorMessage(err), color: 'error' })
+  } finally {
+    isDisconnecting.value = false
+  }
 }
+
+// Result of the OAuth round-trip lands here as ?ig=connected|cancelled|error.
+onMounted(async () => {
+  const status = route.query.ig as string | undefined
+  if (!status) return
+  await fetchStore()
+  if (status === 'connected') {
+    toast.add({
+      title: 'Instagram connected',
+      description: accountInfo.value.webhookActive
+        ? `DMs to ${accountInfo.value.username} will now show up in your inbox.`
+        : 'Connected, but webhook subscription failed — try disconnecting and reconnecting.',
+      icon: 'i-simple-icons-instagram',
+      color: accountInfo.value.webhookActive ? 'success' : 'warning'
+    })
+  } else if (status === 'cancelled') {
+    toast.add({ title: 'Connection cancelled', description: 'You closed the Meta permissions screen.', color: 'neutral' })
+  } else {
+    toast.add({ title: 'Instagram connection failed', description: (route.query.reason as string) || 'Unknown error', color: 'error' })
+  }
+  router.replace({ query: {} })
+})
 </script>
 
 <template>
@@ -59,7 +110,9 @@ function handleDisconnect() {
           <div>
             <h4 class="font-bold text-highlighted text-base">{{ accountInfo.name }}</h4>
             <p class="text-sm text-dimmed">{{ accountInfo.username }} • {{ accountInfo.followers }} followers</p>
-            <p class="text-xs text-muted mt-1">Webhook sync active • Connected on {{ accountInfo.connectedAt }}</p>
+            <p class="text-xs text-muted mt-1">
+              {{ accountInfo.webhookActive ? 'Webhook sync active' : 'Webhook not subscribed' }} • Connected on {{ accountInfo.connectedAt }}
+            </p>
           </div>
         </div>
 
@@ -68,6 +121,8 @@ function handleDisconnect() {
           color="error"
           variant="outline"
           size="sm"
+          :loading="isDisconnecting"
+          :disabled="!isOwner"
           @click="handleDisconnect"
         />
       </div>
@@ -77,9 +132,13 @@ function handleDisconnect() {
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div class="p-2.5 bg-background rounded-lg border border-default">
             <span class="text-muted">DM Webhook:</span>
-            <p class="font-medium text-emerald-500 flex items-center gap-1 mt-0.5">
+            <p v-if="accountInfo.webhookActive" class="font-medium text-emerald-500 flex items-center gap-1 mt-0.5">
               <UIcon name="i-lucide-check-circle-2" class="size-3.5" />
               Receiving Messages
+            </p>
+            <p v-else class="font-medium text-amber-500 flex items-center gap-1 mt-0.5">
+              <UIcon name="i-lucide-alert-triangle" class="size-3.5" />
+              Not subscribed — reconnect
             </p>
           </div>
           <div class="p-2.5 bg-background rounded-lg border border-default">
@@ -112,13 +171,15 @@ function handleDisconnect() {
         </p>
       </div>
       <UButton
-        label="Connect via Facebook / Meta API"
-        icon="i-simple-icons-meta"
+        label="Connect Instagram"
+        icon="i-simple-icons-instagram"
         color="primary"
         size="lg"
         :loading="isConnecting"
+        :disabled="!isOwner"
         @click="handleConnect"
       />
+      <p v-if="!isOwner" class="text-xs text-dimmed">Only the store owner can connect Instagram.</p>
     </UCard>
 
     <!-- Seller Payment UPI & Order Form Preferences Card -->

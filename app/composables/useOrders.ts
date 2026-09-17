@@ -97,7 +97,7 @@ export function useOrders() {
     })
     const mapped = mapOrder(created)
     orders.value = [mapped, ...orders.value]
-    return { ...mapped, autoLinked: !!created.autoLinked }
+    return { ...mapped, autoLinked: !!created.autoLinked, dmError: (created.dmError as string | null) ?? null }
   }
 
   async function updateOrderStatus(id: string, status: OrderStatus) {

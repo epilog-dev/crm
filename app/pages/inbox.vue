@@ -15,6 +15,7 @@ const {
   startConversation,
 } = useConversations();
 const { createOrder } = useOrders();
+const { store } = useStore();
 
 const activeChatId = ref<string | null>(null);
 const searchQuery = ref("");
@@ -103,7 +104,7 @@ const handleCreateOrder = async () => {
 
   isSendingOrder.value = true;
   try {
-    const { autoLinked } = await createOrder({
+    const { autoLinked, dmError } = await createOrder({
       conversationId: activeChat.value.id,
       customer: { handle: activeChat.value.handle, name: activeChat.value.name, avatarUrl: activeChat.value.avatar },
       itemName: orderForm.value.item,
@@ -115,7 +116,14 @@ const handleCreateOrder = async () => {
     activeChatId.value = activeChat.value?.id ?? activeChatId.value;
     isOrderModalOpen.value = false;
 
-    if (!autoLinked) {
+    if (dmError) {
+      toast.add({
+        title: 'Order created, but the DM failed',
+        description: `Instagram didn't accept the message (${dmError}). Use "Copy Order Link" to share it manually.`,
+        icon: 'i-lucide-alert-triangle',
+        color: 'warning'
+      });
+    } else if (!autoLinked) {
       toast.add({
         title: 'Order created',
         description: 'Auto-Link DMs is off, so the link wasn\'t sent automatically. Use "Copy Order Link" to share it.',
@@ -128,13 +136,28 @@ const handleCreateOrder = async () => {
   }
 };
 
+function errorMessage(err: unknown) {
+  const e = err as { data?: { message?: string }, message?: string };
+  return e?.data?.message || e?.message || 'Something went wrong';
+}
+
 // Send standard message handler
 const sendMessage = async () => {
   if (!replyText.value.trim() || !activeChat.value) return;
 
   const text = replyText.value;
   replyText.value = "";
-  await sendMessageApi(activeChat.value.id, text);
+  try {
+    await sendMessageApi(activeChat.value.id, text);
+  } catch (err) {
+    replyText.value = text;
+    toast.add({
+      title: 'Message not sent',
+      description: errorMessage(err),
+      icon: 'i-lucide-alert-triangle',
+      color: 'error'
+    });
+  }
 };
 
 function copyOrderLink(text: string) {
@@ -161,8 +184,11 @@ function copyOrderLink(text: string) {
               <h2 class="text-base font-bold text-highlighted">Instagram Sales DM</h2>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 font-semibold">
-                Meta API Live
+              <span
+                v-if="store?.instagram_connected"
+                class="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 font-semibold"
+              >
+                Live DMs
               </span>
               <UButton
                 icon="i-lucide-plus"

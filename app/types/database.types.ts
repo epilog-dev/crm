@@ -142,6 +142,53 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_accounts: {
+        Row: {
+          access_token: string
+          created_at: string
+          id: string
+          ig_user_id: string
+          permissions: string[]
+          store_id: string
+          subscribed_fields: string[]
+          token_expires_at: string | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          id?: string
+          ig_user_id: string
+          permissions?: string[]
+          store_id: string
+          subscribed_fields?: string[]
+          token_expires_at?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          id?: string
+          ig_user_id?: string
+          permissions?: string[]
+          store_id?: string
+          subscribed_fields?: string[]
+          token_expires_at?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_accounts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string
