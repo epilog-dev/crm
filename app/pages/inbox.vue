@@ -10,34 +10,45 @@ useSeoMeta({
 const {
   conversations,
   realtimeConnected,
+  activeId: activeChatId,
   fetchConversations,
   loadMessages,
   sendMessage,
-  markRead,
-  subscribe
+  markRead
 } = useConversations()
 const { store, fetchStore } = useStore()
 const toast = useToast()
 const overlay = useOverlay()
+const route = useRoute()
 
-const activeChatId = ref<string | null>(null)
 const activeChat = computed(() => conversations.value.find(c => c.id === activeChatId.value))
 const thread = ref<InstanceType<typeof InboxChatThread> | null>(null)
 const sending = ref(false)
 
-let stopRealtime: (() => void) | null = null
+// `?c=<id>` opens a specific thread -- the DM pop-up's "Open" action uses it.
+const requestedChatId = computed(() => (typeof route.query.c === 'string' ? route.query.c : null))
 
 onMounted(async () => {
+  activeChatId.value = null
   await Promise.all([fetchConversations(), store.value ? Promise.resolve() : fetchStore()])
+  if (requestedChatId.value && conversations.value.some(c => c.id === requestedChatId.value)) {
+    selectChat(requestedChatId.value)
+    return
+  }
   // Desktop shows list + thread side by side, so open the newest thread. On
   // phones the thread replaces the list, so land on the list instead.
   const sideBySide = window.matchMedia('(min-width: 768px)').matches
   if (sideBySide && !activeChatId.value && conversations.value[0]) selectChat(conversations.value[0].id)
-  if (store.value?.id) stopRealtime = subscribe(store.value.id)
 })
 
+watch(requestedChatId, (id) => {
+  if (id && id !== activeChatId.value && conversations.value.some(c => c.id === id)) selectChat(id)
+})
+
+// The realtime channel lives in the layout; just make sure global DM alerts
+// don't treat a thread as "being viewed" once we leave the page.
 onUnmounted(() => {
-  stopRealtime?.()
+  activeChatId.value = null
 })
 
 async function selectChat(id: string) {

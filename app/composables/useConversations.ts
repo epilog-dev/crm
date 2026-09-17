@@ -65,6 +65,8 @@ export function useConversations() {
   const conversations = useState<Conversation[]>('conversations', () => [])
   const pending = useState<boolean>('conversationsPending', () => false)
   const realtimeConnected = useState<boolean>('conversationsRealtime', () => false)
+  /** Thread open in the inbox right now (null when not on the inbox). Lets global DM alerts stay quiet for it. */
+  const activeId = useState<string | null>('conversationsActiveId', () => null)
 
   function find(id: string) {
     return conversations.value.find(c => c.id === id)
@@ -264,6 +266,7 @@ export function useConversations() {
     conversations,
     pending,
     realtimeConnected,
+    activeId,
     fetchConversations,
     loadMessages,
     sendMessage,

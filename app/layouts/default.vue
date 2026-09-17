@@ -1,5 +1,22 @@
 <script lang="ts" setup>
 const { user, navItems, userMenuItems } = useNavigation()
+const { store } = useStore()
+const { subscribe } = useConversations()
+const { onNewMessage } = useDmAlerts()
+
+// One realtime channel for the whole dashboard: keeps the inbox list, sidebar
+// unread badge and DM pop/chime live on every page, not just /inbox.
+let stopRealtime: (() => void) | null = null
+onMounted(() => {
+  watch(() => store.value?.id, (storeId) => {
+    stopRealtime?.()
+    stopRealtime = storeId ? subscribe(storeId, { onNewMessage }) : null
+  }, { immediate: true })
+})
+onUnmounted(() => {
+  stopRealtime?.()
+  stopRealtime = null
+})
 
 useSeoMeta({
   title: 'Instagram DM Sales Workspace',
