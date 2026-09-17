@@ -49,7 +49,7 @@ const columns: TableColumn<CustomerViewModel>[] = [
     <template #empty>
       <UEmpty
         icon="i-lucide-users"
-        title="No customers yet"
+        title="No customers found"
         description="Buyers are added automatically when they confirm an order link."
         variant="naked"
         size="sm"

@@ -37,23 +37,12 @@ function mapCustomer(row: any): CustomerViewModel {
 }
 
 export function useCustomers() {
-  const customers = useState<CustomerViewModel[]>('customers', () => [])
-  const pending = useState<boolean>('customersPending', () => false)
-
-  async function fetchCustomers() {
-    pending.value = true
-    try {
-      const data = await $fetch<any[]>('/api/customers')
-      customers.value = data.map(mapCustomer)
-      return customers.value
-    } finally {
-      pending.value = false
-    }
+  async function fetchCustomersPage(params: { page?: number, pageSize?: number, q?: string }) {
+    const result = await $fetch<{ items: any[], total: number }>('/api/customers', {
+      query: { page: params.page ?? 1, pageSize: params.pageSize ?? 20, q: params.q || undefined }
+    })
+    return { items: result.items.map(mapCustomer), total: result.total }
   }
 
-  return {
-    customers,
-    pending,
-    fetchCustomers
-  }
+  return { fetchCustomersPage }
 }

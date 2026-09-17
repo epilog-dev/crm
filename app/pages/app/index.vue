@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SetupStep } from '~/components/dashboard/SetupChecklist.vue'
+import type { OrderViewModel } from '~/composables/useOrders'
 
 useSeoMeta({
   title: 'Sales Dashboard - Instagram DM Sales Workspace',
@@ -7,20 +8,21 @@ useSeoMeta({
 })
 
 const { store, fetchStore } = useStore()
-const { orders, fetchOrders } = useOrders()
+const { stats, fetchStats, fetchOrdersPage } = useOrders()
 const { conversations, fetchConversations } = useConversations()
 
-onMounted(() => {
+const recentOrders = ref<OrderViewModel[]>([])
+
+onMounted(async () => {
   if (!store.value) fetchStore()
-  fetchOrders()
+  fetchStats()
   fetchConversations()
+  recentOrders.value = (await fetchOrdersPage({ page: 1, pageSize: 4 })).items
 })
 
 // Focus Mode: minimal, distraction-free view vs the full analytics dashboard.
 const isFocusMode = ref(false)
 
-const activeOrders = computed(() => orders.value.filter(o => o.status !== 'Cancelled'))
-const pendingPaymentOrders = computed(() => activeOrders.value.filter(o => o.paymentStatus === 'Pending'))
 const activeDmConversations = computed(() => conversations.value.filter(c => c.unreadCount > 0))
 
 // Onboarding checklist derived from real account state.
@@ -45,7 +47,7 @@ const setupSteps = computed<SetupStep[]>(() => [
     id: 3,
     title: 'Create Order from Conversation',
     description: 'Generate unique order link directly inside DM chat.',
-    completed: orders.value.length > 0,
+    completed: stats.value.total > 0,
     link: '/inbox',
     linkText: 'Create order'
   },
@@ -53,24 +55,23 @@ const setupSteps = computed<SetupStep[]>(() => [
     id: 4,
     title: 'Verify Payment & Print Courier Label',
     description: 'Check UPI screenshot / COD status and print shipping slip.',
-    completed: orders.value.some(o => o.paymentStatus === 'Paid'),
+    completed: stats.value.paid > 0,
     link: '/orders',
     linkText: 'Go to orders'
   }
 ])
 
 const metrics = computed(() => ({
-  totalSales: activeOrders.value.reduce((sum, o) => sum + o.price, 0),
-  ordersCount: activeOrders.value.length,
+  totalSales: stats.value.total_sales,
+  ordersCount: stats.value.active,
   conversionRate: conversations.value.length
     ? `${Math.round((conversations.value.filter(c => c.orderIds.length > 0).length / conversations.value.length) * 100)}%`
     : '—',
-  pendingPaymentAmount: pendingPaymentOrders.value.reduce((sum, o) => sum + o.price, 0),
-  pendingPaymentCount: pendingPaymentOrders.value.length,
+  pendingPaymentAmount: stats.value.pending_amount,
+  pendingPaymentCount: stats.value.pending_count,
   activeDms: activeDmConversations.value.length
 }))
 
-const recentOrders = computed(() => orders.value.slice(0, 4))
 const recentConversations = computed(() => conversations.value.slice(0, 4))
 </script>
 

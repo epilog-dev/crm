@@ -4,11 +4,7 @@ useSeoMeta({
   description: 'Buyer directory created automatically from Instagram DMs and confirmed order links.'
 })
 
-const { customers, pending, fetchCustomers } = useCustomers()
-
-onMounted(() => {
-  fetchCustomers()
-})
+const { fetchCustomersPage } = useCustomers()
 
 // 'auto' = cards on small screens, table on large.
 const view = ref<'auto' | 'cards' | 'table'>('auto')
@@ -19,16 +15,10 @@ const viewItems = [
 ]
 
 const search = ref('')
-const filtered = computed(() => {
-  const q = search.value.trim().toLowerCase()
-  if (!q) return customers.value
-  return customers.value.filter(c =>
-    c.name.toLowerCase().includes(q)
-    || c.handle.toLowerCase().includes(q)
-    || c.phone.includes(q)
-    || c.address.toLowerCase().includes(q)
-  )
-})
+const filters = computed(() => ({ q: search.value.trim() }))
+const { items: customers, total, page, pageSize, pending, refresh } = usePagedList(fetchCustomersPage, filters, { pageSize: 20 })
+
+onMounted(refresh)
 
 const showCards = computed(() => view.value !== 'table')
 const showTable = computed(() => view.value !== 'cards')
@@ -48,19 +38,21 @@ const showTable = computed(() => view.value !== 'cards')
     </div>
 
     <div v-if="showCards" :class="['grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4', view === 'auto' && 'lg:hidden']">
-      <CustomersCard v-for="customer in filtered" :key="customer.id" :customer="customer" />
+      <CustomersCard v-for="customer in customers" :key="customer.id" :customer="customer" />
       <UEmpty
-        v-if="!pending && filtered.length === 0"
+        v-if="!pending && customers.length === 0"
         icon="i-lucide-users"
-        :title="customers.length ? 'No matches' : 'No customers yet'"
-        :description="customers.length ? 'Try a different name, handle or phone number.' : 'Buyers are added automatically when they confirm an order link.'"
+        :title="filters.q ? 'No matches' : 'No customers yet'"
+        :description="filters.q ? 'Try a different name, handle or phone number.' : 'Buyers are added automatically when they confirm an order link.'"
         variant="naked"
         class="col-span-full"
       />
     </div>
 
     <div v-if="showTable" :class="view === 'auto' && 'hidden lg:block'">
-      <CustomersTable :customers="filtered" :loading="pending" />
+      <CustomersTable :customers="customers" :loading="pending" />
     </div>
+
+    <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
   </div>
 </template>

@@ -4,18 +4,18 @@ import type { OrderStatus } from '~/composables/useOrders'
 
 /**
  * Manage one order: payment status, lifecycle status, receipt, shipping slip.
- * Reads the order from the shared `orders` state by id so every update made
- * here is reflected in the table/kanban behind it without re-fetching.
+ * Reads the order from the shared cache by id so every update made here is
+ * reflected in the table/board behind it without re-fetching.
  */
 const props = defineProps<{ orderId: string }>()
 const emit = defineEmits<{ close: [] }>()
 
-const { orders, updateOrderStatus, updatePaymentStatus } = useOrders()
+const { getOrder, updateOrderStatus, updatePaymentStatus } = useOrders()
 const { store } = useStore()
 const toast = useToast()
 const overlay = useOverlay()
 
-const order = computed(() => orders.value.find(o => o.id === props.orderId))
+const order = computed(() => getOrder(props.orderId))
 const saving = ref(false)
 
 const statusItems = ORDER_STATUSES.map(status => ({ label: status, value: status }))

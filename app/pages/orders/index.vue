@@ -10,13 +10,9 @@ useSeoMeta({
   title: 'Orders Dashboard - Instagram DM Sales'
 })
 
-const { orders, pending, fetchOrders, updateOrderStatus, updatePaymentStatus } = useOrders()
+const { cache, stats, fetchStats, fetchOrdersPage, updateOrderStatus, updatePaymentStatus } = useOrders()
 const toast = useToast()
 const overlay = useOverlay()
-
-onMounted(() => {
-  fetchOrders()
-})
 
 const viewMode = ref<'table' | 'kanban'>('table')
 const viewItems = [
@@ -28,25 +24,17 @@ const search = ref('')
 const statusFilter = ref<'All' | OrderStatus>('All')
 const statusFilterItems = ['All', ...ORDER_STATUSES].map(s => ({ label: `Status: ${s}`, value: s }))
 
-const filteredOrders = computed(() => {
-  const q = search.value.trim().toLowerCase()
-  return orders.value.filter((o) => {
-    const matchesStatus = statusFilter.value === 'All' || o.status === statusFilter.value
-    const matchesSearch = !q
-      || o.orderCode.toLowerCase().includes(q)
-      || o.item.toLowerCase().includes(q)
-      || o.customer.name.toLowerCase().includes(q)
-      || o.customer.handle.toLowerCase().includes(q)
-    return matchesStatus && matchesSearch
-  })
-})
+// Table: one server-paged list driven by search + status.
+const filters = computed(() => ({ q: search.value.trim(), status: statusFilter.value }))
+const { items, total, page, pageSize, pending, refresh } = usePagedList(fetchOrdersPage, filters, { pageSize: 20 })
 
-const stats = computed(() => ({
-  total: orders.value.length,
-  awaiting: orders.value.filter(o => o.status === 'Awaiting Payment').length,
-  paid: orders.value.filter(o => o.paymentStatus === 'Paid').length,
-  shipped: orders.value.filter(o => o.status === 'Shipped').length
-}))
+// Rows read through the cache so edits in the slideover show up immediately.
+const rows = computed(() => items.value.map(o => cache.value[o.id] ?? o))
+
+onMounted(() => {
+  refresh()
+  fetchStats()
+})
 
 const detailsSlideover = overlay.create(LazyOrdersOrderDetailsSlideover)
 
@@ -73,7 +61,7 @@ async function moveOrder(id: string, status: OrderStatus) {
   <div class="p-4 md:p-6 space-y-4">
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <StatCard label="Total Orders" :value="stats.total" />
-      <StatCard label="Awaiting Payment" :value="stats.awaiting" color="warning" />
+      <StatCard label="Awaiting Payment" :value="stats.awaiting_payment" color="warning" />
       <StatCard label="Paid Orders" :value="stats.paid" color="success" />
       <StatCard label="Shipped" :value="stats.shipped" color="info" />
     </div>
@@ -82,26 +70,24 @@ async function moveOrder(id: string, status: OrderStatus) {
       <UInput
         v-model="search"
         icon="i-lucide-search"
-        placeholder="Filter by order ID, buyer (@maria), or item…"
+        placeholder="Search order ID, buyer (@maria), or item…"
         class="w-full max-w-md"
       />
 
       <div class="flex items-center gap-2 flex-wrap">
         <UTabs v-model="viewMode" :items="viewItems" :content="false" size="xs" color="neutral" />
-        <USelect v-model="statusFilter" :items="statusFilterItems" size="sm" class="min-w-44" />
+        <USelect v-if="viewMode === 'table'" v-model="statusFilter" :items="statusFilterItems" size="sm" class="min-w-44" />
         <UButton to="/inbox" label="Create order from DM" icon="i-lucide-message-square" color="primary" />
       </div>
     </div>
 
-    <OrdersTable
-      v-if="viewMode === 'table'"
-      :orders="filteredOrders"
-      :loading="pending"
-      @select="openOrder"
-    />
+    <template v-if="viewMode === 'table'">
+      <OrdersTable :orders="rows" :loading="pending" @select="openOrder" />
+      <TablePagination v-model:page="page" v-model:page-size="pageSize" :total="total" />
+    </template>
     <OrdersKanban
       v-else
-      :orders="filteredOrders"
+      :search="filters.q"
       :move-order="moveOrder"
       @select="openOrder"
     />

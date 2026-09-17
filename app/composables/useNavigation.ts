@@ -7,7 +7,7 @@ import { useOrders } from './useOrders'
 export function useNavigation() {
   const { store, fetchStore } = useStore()
   const { conversations, fetchConversations } = useConversations()
-  const { orders, fetchOrders } = useOrders()
+  const { stats, statsLoaded, fetchStats } = useOrders()
   const supabase = useSupabaseClient()
   const router = useRouter()
 
@@ -17,11 +17,11 @@ export function useNavigation() {
   onMounted(() => {
     if (!store.value) fetchStore({ silent: true })
     if (!conversations.value.length) fetchConversations({ silent: true })
-    if (!orders.value.length) fetchOrders({ silent: true })
+    if (!statsLoaded.value) fetchStats().catch(() => {})
   })
 
   const unreadDmCount = computed(() => conversations.value.reduce((sum, c) => sum + c.unreadCount, 0))
-  const awaitingPaymentCount = computed(() => orders.value.filter(o => o.status === 'Awaiting Payment').length)
+  const awaitingPaymentCount = computed(() => stats.value.awaiting_payment)
   const storeName = computed(() => store.value?.name || 'My Store')
 
   const user = computed(() => ({
