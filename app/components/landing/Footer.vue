@@ -12,6 +12,7 @@
         <NuxtLink to="/login" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Log in</NuxtLink>
         <NuxtLink to="/register" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Try the demo</NuxtLink>
         <NuxtLink to="/app" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Dashboard</NuxtLink>
+        <NuxtLink to="/privacy" class="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Privacy</NuxtLink>
       </div>
     </div>
   </footer>

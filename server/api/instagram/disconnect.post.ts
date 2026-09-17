@@ -16,19 +16,10 @@ export default defineEventHandler(async (event) => {
     await unsubscribeFromWebhooks(account.access_token, account.ig_user_id).catch((err) => {
       console.error('Instagram unsubscribe failed:', (err as Error).message)
     })
-    await admin.from('instagram_accounts').delete().eq('id', account.id)
+    await removeInstagramConnection(admin, account.ig_user_id)
   }
 
-  const { data, error } = await admin.from('stores').update({
-    instagram_connected: false,
-    instagram_connected_at: null,
-    instagram_business_id: null,
-    instagram_username: null,
-    instagram_avatar_url: null,
-    instagram_followers_count: null,
-    webhook_status: null
-  }).eq('id', store.id).select().single()
-
+  const { data, error } = await admin.from('stores').select().eq('id', store.id).single()
   if (error) throw createError({ statusCode: 500, message: error.message })
   return { ...data, role }
 })

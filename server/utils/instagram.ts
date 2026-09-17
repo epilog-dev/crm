@@ -269,3 +269,51 @@ export function verifyWebhookSignature(rawBody: string, signatureHeader: string 
     return expected.length === received.length && timingSafeEqual(expected, received)
   })
 }
+
+// ---------------------------------------------------------------------------
+// Signed requests (deauthorize + data-deletion callbacks)
+// ---------------------------------------------------------------------------
+
+/**
+ * Parses Meta's `signed_request` ("<sig>.<payload>", both base64url). Returns
+ * the payload only if the signature matches one of our app secrets.
+ * https://developers.facebook.com/docs/facebook-login/security/#signed-request
+ */
+export function parseSignedRequest(signedRequest: string | undefined): { user_id?: string, algorithm?: string } | null {
+  if (!signedRequest || !signedRequest.includes('.')) return null
+  const [sig, payload] = signedRequest.split('.', 2)
+  if (!sig || !payload) return null
+
+  const received = Buffer.from(sig, 'base64url')
+  const secrets = [config().appSecret, useRuntimeConfig().metaAppSecret as string].filter(Boolean)
+  const valid = secrets.some((secret) => {
+    const expected = createHmac('sha256', secret).update(payload).digest()
+    return expected.length === received.length && timingSafeEqual(expected, received)
+  })
+  if (!valid) return null
+
+  try {
+    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
+  } catch {
+    return null
+  }
+}
+
+/** Drops the stored token + profile for an IG user. Used by disconnect, deauthorize and data-deletion. */
+export async function removeInstagramConnection(admin: Admin, igUserId: string) {
+  const { data: account } = await admin.from('instagram_accounts').select('id, store_id').eq('ig_user_id', igUserId).maybeSingle()
+  if (!account) return null
+
+  await admin.from('instagram_accounts').delete().eq('id', account.id)
+  await admin.from('stores').update({
+    instagram_connected: false,
+    instagram_connected_at: null,
+    instagram_business_id: null,
+    instagram_username: null,
+    instagram_avatar_url: null,
+    instagram_followers_count: null,
+    webhook_status: null
+  }).eq('id', account.store_id)
+
+  return account.store_id
+}
