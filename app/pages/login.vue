@@ -1,8 +1,16 @@
 <script setup lang="ts">
-definePageMeta({ layout: false, auth: false })
+definePageMeta({ layout: false, auth: false, guestOnly: true })
 
 const supabase = useSupabaseClient()
+const user = useSupabaseUser()
 const router = useRouter()
+const route = useRoute()
+
+// Only follow same-origin paths from ?redirect= -- never an absolute URL.
+const redirectTo = computed(() => {
+  const r = route.query.redirect
+  return typeof r === 'string' && r.startsWith('/') && !r.startsWith('//') ? r : '/app'
+})
 
 const state = reactive({
   email: '',
@@ -24,9 +32,18 @@ async function signIn() {
 
   if (err) {
     error.value = err.message
-  } else {
-    await router.push('/app')
+    return
   }
+
+  // `useSupabaseUser` is filled in by the auth-state listener a tick after
+  // sign-in resolves; navigate only once it's set or the auth middleware
+  // would bounce us straight back here.
+  if (!user.value) {
+    await new Promise<void>((resolve) => {
+      const stop = watch(user, (u) => { if (u) { stop(); resolve() } })
+    })
+  }
+  await router.replace(redirectTo.value)
 }
 </script>
 
