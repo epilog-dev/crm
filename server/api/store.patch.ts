@@ -16,6 +16,12 @@ export default defineEventHandler(async (event) => {
     if (key in body) patch[key] = body[key]
   }
 
+  // Onboarding checklist state is stamped here, never with a client-supplied
+  // time. Completion is recorded once; dismissal can be re-sent harmlessly.
+  const now = new Date().toISOString()
+  if (body.setup_completed === true && !store.setup_completed_at) patch.setup_completed_at = now
+  if (body.setup_dismissed === true) patch.setup_dismissed_at = now
+
   if (!Object.keys(patch).length) {
     throw createError({ statusCode: 400, message: 'No valid fields to update' })
   }

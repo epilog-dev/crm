@@ -54,7 +54,7 @@ watch(() => props.conversation.messages.length, (len, prev) => {
             size="sm"
             aria-label="Message on Instagram"
           >
-            <span class="hidden sm:inline">Message on IG</span>
+            <!-- <span class="hidden sm:inline">Message on IG</span> -->
           </UButton>
         </UTooltip>
         <UButton label="+ Order" color="primary" size="sm" @click="emit('createOrder')" />

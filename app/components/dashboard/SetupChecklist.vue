@@ -8,14 +8,28 @@ export interface SetupStep {
   linkText: string
 }
 
-const props = defineProps<{ steps: SetupStep[] }>()
+const props = defineProps<{ steps: SetupStep[], dismissing?: boolean }>()
+const emit = defineEmits<{ dismiss: [] }>()
 
 const completedCount = computed(() => props.steps.filter(s => s.completed).length)
 const percentage = computed(() => Math.round((completedCount.value / props.steps.length) * 100))
+const allDone = computed(() => completedCount.value === props.steps.length)
 </script>
 
 <template>
-  <UCard variant="outline">
+  <!-- Finished: a one-line send-off the seller can clear, instead of a checklist of things already done. -->
+  <UAlert
+    v-if="allDone"
+    icon="i-lucide-party-popper"
+    color="success"
+    variant="soft"
+    title="You're all set"
+    description="Instagram is connected and your first order is paid. The full workflow is up and running."
+    :actions="[{ label: 'Dismiss', color: 'neutral', variant: 'outline', size: 'xs', loading: dismissing, onClick: () => emit('dismiss') }]"
+    orientation="horizontal"
+  />
+
+  <UCard v-else variant="outline">
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>

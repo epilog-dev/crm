@@ -13,6 +13,8 @@ export interface Store {
   cod_enabled: boolean
   require_receipt_upload: boolean
   auto_link_dms: boolean
+  setup_completed_at: string | null
+  setup_dismissed_at: string | null
   created_at: string
   updated_at: string
   role?: 'owner' | 'staff'
@@ -39,10 +41,26 @@ export function useStore() {
     return updated
   }
 
+  /** Records the first time the onboarding checklist was seen fully complete (server stamps the time once). */
+  async function markSetupCompleted() {
+    const updated = await $fetch<Store>('/api/store', { method: 'PATCH', body: { setup_completed: true } })
+    store.value = updated
+    return updated
+  }
+
+  /** Hides the completed onboarding checklist for good, for every device on this store. */
+  async function dismissSetupChecklist() {
+    const updated = await $fetch<Store>('/api/store', { method: 'PATCH', body: { setup_dismissed: true } })
+    store.value = updated
+    return updated
+  }
+
   return {
     store,
     pending,
     fetchStore,
-    updateStore
+    updateStore,
+    markSetupCompleted,
+    dismissSetupChecklist
   }
 }

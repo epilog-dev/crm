@@ -648,6 +648,8 @@ export type Database = {
           instagram_username: string | null
           name: string
           require_receipt_upload: boolean
+          setup_completed_at: string | null
+          setup_dismissed_at: string | null
           updated_at: string
           upi_vpa: string | null
           webhook_status: string | null
@@ -666,6 +668,8 @@ export type Database = {
           instagram_username?: string | null
           name: string
           require_receipt_upload?: boolean
+          setup_completed_at?: string | null
+          setup_dismissed_at?: string | null
           updated_at?: string
           upi_vpa?: string | null
           webhook_status?: string | null
@@ -684,6 +688,8 @@ export type Database = {
           instagram_username?: string | null
           name?: string
           require_receipt_upload?: boolean
+          setup_completed_at?: string | null
+          setup_dismissed_at?: string | null
           updated_at?: string
           upi_vpa?: string | null
           webhook_status?: string | null
@@ -753,6 +759,8 @@ export type Database = {
           instagram_username: string | null
           name: string
           require_receipt_upload: boolean
+          setup_completed_at: string | null
+          setup_dismissed_at: string | null
           updated_at: string
           upi_vpa: string | null
           webhook_status: string | null

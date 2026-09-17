@@ -7,8 +7,9 @@ useSeoMeta({
   description: 'Overview of Instagram DM sales, conversion rate, pending payments, and recent orders.'
 })
 
-const { store, fetchStore } = useStore()
+const { store, fetchStore, markSetupCompleted, dismissSetupChecklist } = useStore()
 const { stats, fetchStats, fetchOrdersPage } = useOrders()
+const toast = useToast()
 const { conversations, fetchConversations } = useConversations()
 
 const recentOrders = ref<OrderViewModel[]>([])
@@ -61,6 +62,40 @@ const setupSteps = computed<SetupStep[]>(() => [
   }
 ])
 
+// Checklist lifecycle: shown while incomplete; once complete it collapses to
+// a "You're all set" strip until dismissed, and auto-hides after a week even
+// if never dismissed. Dismissal is stored on the store, so it stays hidden
+// on every device and is never resurrected (e.g. if Instagram disconnects).
+const SETUP_AUTO_HIDE_MS = 7 * 24 * 60 * 60 * 1000
+
+const setupComplete = computed(() => setupSteps.value.every(s => s.completed))
+const showChecklist = computed(() => {
+  if (!store.value) return true
+  if (store.value.setup_dismissed_at) return false
+  const completedAt = store.value.setup_completed_at ? new Date(store.value.setup_completed_at).getTime() : null
+  if (completedAt && Date.now() - completedAt > SETUP_AUTO_HIDE_MS) return false
+  return true
+})
+
+// Stamp completion the first time we observe all four steps done.
+watch(setupComplete, (done) => {
+  if (done && store.value && !store.value.setup_completed_at) {
+    markSetupCompleted().catch(() => {})
+  }
+})
+
+const dismissingChecklist = ref(false)
+async function dismissChecklist() {
+  dismissingChecklist.value = true
+  try {
+    await dismissSetupChecklist()
+  } catch (err) {
+    toast.add({ title: 'Could not hide the checklist', description: (err as Error).message, color: 'error' })
+  } finally {
+    dismissingChecklist.value = false
+  }
+}
+
 const metrics = computed(() => ({
   totalSales: stats.value.total_sales,
   ordersCount: stats.value.active,
@@ -86,7 +121,12 @@ const recentConversations = computed(() => conversations.value.slice(0, 4))
     />
 
     <template v-else>
-      <DashboardSetupChecklist :steps="setupSteps" />
+      <DashboardSetupChecklist
+        v-if="showChecklist"
+        :steps="setupSteps"
+        :dismissing="dismissingChecklist"
+        @dismiss="dismissChecklist"
+      />
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard

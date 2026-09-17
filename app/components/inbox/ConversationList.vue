@@ -33,15 +33,15 @@ const filtered = computed(() => {
           <h2 class="text-base font-bold text-highlighted truncate">Instagram Sales DM</h2>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-          <UTooltip v-if="connected" :text="live ? 'Receiving DMs in real time' : 'Reconnecting… (polling)'">
+          <!-- <UTooltip v-if="connected" :text="live ? 'Receiving DMs in real time' : 'Reconnecting… (polling)'">
             <UBadge :color="live ? 'success' : 'warning'" variant="subtle" size="xs" class="rounded-full">
               <span :class="['size-1.5 rounded-full mr-1', live ? 'bg-success animate-pulse' : 'bg-warning']" />
               Live
             </UBadge>
-          </UTooltip>
-          <UTooltip text="Simulate an incoming DM">
+          </UTooltip> -->
+          <!-- <UTooltip text="Simulate an incoming DM">
             <UButton icon="i-lucide-plus" size="xs" color="neutral" variant="outline" aria-label="New conversation" @click="emit('create')" />
-          </UTooltip>
+          </UTooltip> -->
         </div>
       </div>
       <UInput v-model="search" icon="i-lucide-search" placeholder="Search DMs or buyer handle…" size="sm" class="w-full" />
