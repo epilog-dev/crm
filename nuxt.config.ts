@@ -8,6 +8,9 @@ export default defineNuxtConfig({
     instagramAppId: "",
     instagramAppSecret: "",
     instagramWebhookVerifyToken: "",
+    // Optional: the parent Facebook app's secret. Meta may sign Instagram
+    // webhooks with this instead of the Instagram app secret.
+    metaAppSecret: "",
     public: {
       // Set via NUXT_PUBLIC_APP_URL. Used for OAuth redirect + webhook URLs.
       appUrl: "",

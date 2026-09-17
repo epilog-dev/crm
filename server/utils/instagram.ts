@@ -255,10 +255,17 @@ export async function sendInstagramText(account: InstagramAccount, recipientIgsi
 // Webhook signature
 // ---------------------------------------------------------------------------
 
-/** Validates `X-Hub-Signature-256` against the raw request body. */
+/**
+ * Validates `X-Hub-Signature-256` against the raw request body. Meta's docs
+ * are ambiguous about whether Instagram-Login apps are signed with the
+ * Instagram app secret or the parent Facebook app secret, so accept either.
+ */
 export function verifyWebhookSignature(rawBody: string, signatureHeader: string | undefined) {
   if (!signatureHeader?.startsWith('sha256=')) return false
-  const received = signatureHeader.slice('sha256='.length)
-  const expected = createHmac('sha256', config().appSecret).update(rawBody).digest('hex')
-  return expected.length === received.length && timingSafeEqual(Buffer.from(expected), Buffer.from(received))
+  const received = Buffer.from(signatureHeader.slice('sha256='.length))
+  const secrets = [config().appSecret, useRuntimeConfig().metaAppSecret as string].filter(Boolean)
+  return secrets.some((secret) => {
+    const expected = Buffer.from(createHmac('sha256', secret).update(rawBody).digest('hex'))
+    return expected.length === received.length && timingSafeEqual(expected, received)
+  })
 }
