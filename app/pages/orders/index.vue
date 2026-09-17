@@ -55,6 +55,7 @@ function openOrder(order: OrderViewModel) {
 }
 
 // Kanban drop: moving into a paid-or-later column implies the money arrived.
+// Rethrows so the board can roll the card back.
 async function moveOrder(id: string, status: OrderStatus) {
   try {
     await updateOrderStatus(id, status)
@@ -63,6 +64,7 @@ async function moveOrder(id: string, status: OrderStatus) {
     }
   } catch (err) {
     toast.add({ title: 'Could not move order', description: (err as Error).message, color: 'error' })
+    throw err
   }
 }
 </script>
@@ -100,8 +102,8 @@ async function moveOrder(id: string, status: OrderStatus) {
     <OrdersKanban
       v-else
       :orders="filteredOrders"
+      :move-order="moveOrder"
       @select="openOrder"
-      @move="moveOrder"
     />
   </div>
 </template>

@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import type { OrderViewModel } from '~/composables/useOrders'
 
-defineProps<{ order: OrderViewModel }>()
+defineProps<{ order: OrderViewModel, saving?: boolean }>()
 </script>
 
 <template>
   <UPageCard
     variant="outline"
-    draggable="true"
-    class="cursor-grab active:cursor-grabbing hover:ring-primary/50 transition-colors"
+    :class="[
+      'relative select-none transition-shadow',
+      saving ? 'pointer-events-none' : 'cursor-grab active:cursor-grabbing hover:ring-primary/50'
+    ]"
     :ui="{ container: 'p-3 sm:p-3 gap-2' }"
   >
     <div class="flex items-center justify-between">
@@ -20,5 +22,9 @@ defineProps<{ order: OrderViewModel }>()
     </p>
     <USeparator />
     <CustomerUser :name="order.customer.name" :handle="order.customer.handle" :avatar="order.customer.avatar" size="xs" />
+
+    <div v-if="saving" class="absolute inset-0 rounded-lg bg-default/60 flex items-center justify-center">
+      <UIcon name="i-lucide-loader-2" class="size-4 animate-spin text-primary" />
+    </div>
   </UPageCard>
 </template>

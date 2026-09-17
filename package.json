@@ -32,9 +32,11 @@
     "@tiptap/vue-3": "^3.30.2",
     "eslint": "^10.9.0",
     "nuxt": "^4.5.2",
+    "sortablejs": "^1.15.7",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vue": "^3.5.41",
+    "vue-draggable-plus": "^0.6.1",
     "vue-router": "^5.2.0"
   }
 }
