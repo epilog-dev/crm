@@ -13,3 +13,20 @@
 div[id^="dashboard-sidebar-"]:not([data-dragging="true"]) {
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Shipping slip: print only the label, not the surrounding app chrome. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+}

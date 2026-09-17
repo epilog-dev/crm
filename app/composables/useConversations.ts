@@ -30,11 +30,6 @@ export interface Conversation {
 // Polling fallback in case the realtime socket drops or isn't available.
 const LIST_POLL_MS = 20000
 
-function formatTime(iso: string | null) {
-  if (!iso) return ''
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
 function mapConversation(row: any): Conversation {
   return {
     id: row.id,

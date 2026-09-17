@@ -11,11 +11,15 @@ export function useNavigation() {
   const supabase = useSupabaseClient()
   const router = useRouter()
 
-  if (import.meta.client) {
+  // Warm the badge counts once the whole app has hydrated. Kicking these off
+  // any earlier (setup, or even onMounted -- pages are lazy chunks that hydrate
+  // after the layout mounts) flips the `pending` flags mid-hydration and Vue
+  // reports class mismatches on loading indicators.
+  onNuxtReady(() => {
     if (!store.value) fetchStore()
     if (!conversations.value.length) fetchConversations()
     if (!orders.value.length) fetchOrders()
-  }
+  })
 
   const unreadDmCount = computed(() => conversations.value.reduce((sum, c) => sum + c.unreadCount, 0))
   const awaitingPaymentCount = computed(() => orders.value.filter(o => o.status === 'Awaiting Payment').length)
