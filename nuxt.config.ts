@@ -3,6 +3,16 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   modules: ["@nuxt/eslint", "@nuxt/ui", "@nuxtjs/supabase"],
+  runtimeConfig: {
+    // Server-only. Set via NUXT_INSTAGRAM_* env vars.
+    instagramAppId: "",
+    instagramAppSecret: "",
+    instagramWebhookVerifyToken: "",
+    public: {
+      // Set via NUXT_PUBLIC_APP_URL. Used for OAuth redirect + webhook URLs.
+      appUrl: "",
+    },
+  },
   css: ["~/assets/css/main.css"],
   app: {
     head: {
