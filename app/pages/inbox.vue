@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 
 useSeoMeta({
   title: "Instagram DM Inbox - Sales Workspace",
@@ -13,9 +13,11 @@ const {
   sendMessage: sendMessageApi,
   markRead,
   startConversation,
+  subscribe,
+  realtimeConnected,
 } = useConversations();
 const { createOrder } = useOrders();
-const { store } = useStore();
+const { store, fetchStore } = useStore();
 
 const activeChatId = ref<string | null>(null);
 const searchQuery = ref("");
@@ -59,17 +61,56 @@ const handleStartConversation = async () => {
   }
 };
 
+const messagesEl = ref<HTMLElement | null>(null);
+let stopRealtime: (() => void) | null = null;
+
+function scrollToBottom(behavior: ScrollBehavior = "smooth") {
+  nextTick(() => {
+    const el = messagesEl.value;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior });
+  });
+}
+
 onMounted(async () => {
-  await fetchConversations();
+  const [, currentStore] = await Promise.all([
+    fetchConversations(),
+    store.value ? Promise.resolve(store.value) : fetchStore(),
+  ]);
   if (!activeChatId.value && conversations.value.length) {
     selectChat(conversations.value[0].id);
   }
+  if (currentStore?.id) {
+    stopRealtime = subscribe(currentStore.id);
+  }
 });
+
+onUnmounted(() => {
+  stopRealtime?.();
+});
+
 
 // Computed selected chat
 const activeChat = computed(() => {
   return conversations.value.find(c => c.id === activeChatId.value);
 });
+// The thread on screen is by definition read. The webhook bumps unread_count
+// server-side on every inbound DM, and that update streams back in over
+// realtime, so react to the count rather than to the message event.
+watch(
+  () => activeChat.value?.unreadCount,
+  (count) => {
+    if (count && activeChatId.value) markRead(activeChatId.value);
+  }
+);
+
+// Keep the newest message in view: jump on thread switch, glide on new bubbles.
+watch(
+  () => activeChat.value?.messages.length,
+  (len, prev) => {
+    if (len == null) return;
+    scrollToBottom(prev == null || prev === 0 ? "auto" : "smooth");
+  }
+);
 
 // Filtered conversations
 const filteredConversations = computed(() => {
@@ -186,8 +227,10 @@ function copyOrderLink(text: string) {
             <div class="flex items-center gap-2">
               <span
                 v-if="store?.instagram_connected"
-                class="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 font-semibold"
+                class="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 font-semibold flex items-center gap-1.5"
+                :title="realtimeConnected ? 'Receiving DMs in real time' : 'Reconnecting… (polling)'"
               >
+                <span :class="['size-1.5 rounded-full', realtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500']" />
                 Live DMs
               </span>
               <UButton
@@ -272,7 +315,7 @@ function copyOrderLink(text: string) {
       <!-- Active Chat Main View -->
       <div
         :class="[
-          'flex-1 flex flex-col bg-background relative',
+          'flex-1 min-w-0 flex flex-col bg-background relative',
           activeChatId === null ? 'hidden md:flex' : 'flex'
         ]"
       >
@@ -331,7 +374,7 @@ function copyOrderLink(text: string) {
           </div>
 
          <!-- Messages Stream with Customer Delivery Summary Banner -->
-          <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4"> <!-- Customer Delivery Summary Banner (if active chat has order) -->
+          <div ref="messagesEl" class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 sm:p-4 space-y-4 scroll-smooth"> <!-- Customer Delivery Summary Banner (if active chat has order) -->
             <div v-if="activeChat.orderIds.length > 0" class="p-3 rounded-xl bg-elevated/40 border border-default text-xs flex items-center justify-between gap-3 shadow-xs">
               <div class="flex items-center gap-2 min-w-0">
                 <UIcon name="i-lucide-map-pin" class="size-4 text-emerald-500 shrink-0" />
@@ -347,17 +390,23 @@ function copyOrderLink(text: string) {
               </UBadge>
             </div>
 
+            <TransitionGroup
+              name="msg"
+              tag="div"
+              class="space-y-4"
+            >
             <div
               v-for="msg in activeChat.messages"
               :key="msg.id"
               :class="[
-                'flex flex-col max-w-[88%] sm:max-w-[75%]',
-                msg.sender === 'me' ? 'ml-auto items-end' : 'mr-auto items-start'
+                'flex flex-col max-w-[88%] sm:max-w-[75%] transition-opacity duration-300',
+                msg.sender === 'me' ? 'ml-auto items-end' : 'mr-auto items-start',
+                msg.pending ? 'opacity-60' : 'opacity-100'
               ]"
             >
               <div
                 :class="[
-                  'rounded-2xl px-4 py-2.5 text-sm whitespace-pre-line relative group',
+                  'rounded-2xl px-4 py-2.5 text-sm whitespace-pre-line break-words [overflow-wrap:anywhere] relative group',
                   msg.sender === 'me'
                     ? 'bg-primary text-inverted rounded-tr-none'
                     : 'bg-neutral-100 dark:bg-neutral-800 text-highlighted rounded-tl-none'
@@ -376,8 +425,12 @@ function copyOrderLink(text: string) {
                   <span>Copy Order Link</span>
                 </button>
               </div>
-              <span class="text-[10px] text-dimmed mt-1 px-1">{{ msg.time }}</span>
+              <span class="text-[10px] text-dimmed mt-1 px-1 flex items-center gap-1">
+                <UIcon v-if="msg.pending" name="i-lucide-clock" class="size-2.5" />
+                {{ msg.pending ? 'Sending…' : msg.time }}
+              </span>
             </div>
+            </TransitionGroup>
           </div>
 
           <!-- DM Input Form with Quick Snippets Bar -->
@@ -499,3 +552,19 @@ function copyOrderLink(text: string) {
     </UModal>
   </div>
 </template>
+
+<style scoped>
+.msg-enter-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.msg-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.msg-leave-active {
+  transition: opacity 0.15s ease;
+}
+.msg-leave-to {
+  opacity: 0;
+}
+</style>
